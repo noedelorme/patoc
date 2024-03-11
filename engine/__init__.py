@@ -1,1 +1,1 @@
-from engine.circuit import Circuit
+from engine.circuit import *
