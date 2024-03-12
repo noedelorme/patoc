@@ -1,10 +1,15 @@
 import gui as app
 from engine import *
 
+config = {
+    "wire-width": 1,
+    "box-fill": "white"
+}
+
 if __name__ == "__main__":
     print("--- Patoc: a graphical tool for quantum circuits ---")
 
-    app.MainWindow()
+    # app.MainWindow()
 
     # org1 = bound(0, [], [])
     # org2 = bound(1, [], [])

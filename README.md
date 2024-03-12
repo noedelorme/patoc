@@ -1,4 +1,4 @@
-# Patoc : a graphical tool for quantum circuits
+# Patoc: a graphical tool for quantum circuits
 
 Patoc is also a strongly fumarolic stratovolcano in the Philippines.
 
