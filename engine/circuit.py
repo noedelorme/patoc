@@ -92,7 +92,7 @@ class Circuit:
         return True
     
     # highly inefficient, should be dynamic programing
-    def updateDepth(self):
+    def updateDepth(self) -> None:
         queue = self.org
         while len(queue)>0:
             currentgate = self.gates[queue.pop(0)]

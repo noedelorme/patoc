@@ -1,5 +1,5 @@
 class Parser:
-    """Class of parsing data"""
+    """Class for parsing data"""
 
     def __init__(self) -> None:
         print("A parser as been initialised.")
