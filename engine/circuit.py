@@ -49,17 +49,21 @@ class P(Gate):
         self.param = param
         super().__init__(id, "P", 1, 1, preset, postset)
 
+class SWAP(Gate):
+    def __init__(self, id, preset, postset) -> None:
+        super().__init__(id, "SWAP", 2, 2, preset, postset)
+
 class CNOT(Gate):
     def __init__(self, id, preset, postset) -> None:
         super().__init__(id, "CX", 2, 2, preset, postset)
 
 class Divider(Gate):
-    def __init__(self, id, dom, cod, preset, postset) -> None:
-        super().__init__(id, "D", dom, cod, preset, postset)
+    def __init__(self, id, preset, postset) -> None:
+        super().__init__(id, "D", 1, 2, preset, postset)
 
 class Gatherer(Gate):
-    def __init__(self, id, dom, cod, preset, postset) -> None:
-        super().__init__(id, "G", dom, cod, preset, postset)
+    def __init__(self, id, preset, postset) -> None:
+        super().__init__(id, "G", 2, 1, preset, postset)
 
 
 ########################### Circuit class ############################
@@ -81,12 +85,14 @@ class Circuit:
         self.dom = len(org)
         self.cod = len(dst)
 
+        self.layers = []
+
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
 
-    def connect(self, idorg, iddst, qubit) -> None:
-        self.gates[idorg].postset.append((qubit,iddst))
-        self.gates[iddst].preset.append((qubit,idorg))
+    def connect(self, idorg, iddst, wiring) -> None:
+        self.gates[idorg].postset.append((wiring,iddst))
+        self.gates[iddst].preset.append((wiring,idorg))
     
     def checkConnectivity(self) -> bool:
         return True
