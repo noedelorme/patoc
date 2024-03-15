@@ -53,15 +53,14 @@ class MainWindow:
             [None,10,11]
         ]
 
-        canvas = Canvas(root, height=250, width=500)
+        canvas = Canvas(root, height=200, width=400)
         canvas.pack()
         config = {}
         self.painter = CircuitPainter(canvas, circuit, config)
 
         self.painter.drawCircuit()
 
-        
-
+        root.eval('tk::PlaceWindow . center')
         root.mainloop()
 
 def printtest():
