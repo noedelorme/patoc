@@ -6,6 +6,7 @@ class MainWindow:
     def __init__(self) -> None:
         root = Tk()
         root.title("Patoc: a graphical tool for quantum circuits")
+        root.config(bg="white")   
         # label = Label(root, text="Hello World")
         # label.pack()
 
@@ -53,7 +54,7 @@ class MainWindow:
             [None,10,11]
         ]
 
-        canvas = Canvas(root, height=200, width=400)
+        canvas = Canvas(root, height=200, width=400, bg="lightgrey")
         canvas.pack()
         config = {}
         self.painter = CircuitPainter(canvas, circuit, config)

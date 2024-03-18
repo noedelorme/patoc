@@ -14,7 +14,7 @@ class CircuitPainter:
         self.boxheight = 20
         self.wireheight = 25
         self.layerwidth = 50
-        self.dividerHeight = 12
+        self.dividerHeight = 13
         self.layerradius = 25
         self.p = 50
 
@@ -64,15 +64,15 @@ class CircuitPainter:
 
     def grid(self, col):
         for x in self.xs:
-            self.canvas.create_line(x,0,x,self.ys[0][-1]+self.wireheight, width=1, fill="gold", dash=(3,3))
+            self.canvas.create_line(x,0,x,self.ys[0][-1]+self.wireheight, width=1, fill="red", dash=(3,3))
 
     def wire(self, x, y) -> None:
         if x == 0:
-            self.canvas.create_line(self.xs[x]-self.layerradius,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], width=1)
+            self.canvas.create_line(self.xs[x]-self.layerradius,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], width =1)
         elif x == len(self.xs)-1:
-            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],self.xs[x]+self.layerradius,self.ys[x][y], width=1)
+            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],self.xs[x]+self.layerradius,self.ys[x][y], width =1)
         else:
-            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], width=1)
+            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], width =1)
 
     def box(self, x, y, text) -> None:
         self.wire(x,y)
@@ -81,7 +81,7 @@ class CircuitPainter:
         y1 = self.ys[x][y]-self.boxheight/2
         x2 = self.xs[x]+self.boxheight/2
         y2 = self.ys[x][y]+self.boxheight/2
-        self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="white", width = 1)
+        self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="white", width=1)
         self.canvas.create_text(self.xs[x], self.ys[x][y], fill="black", text=text)
 
     def cnot(self, x, y) -> None:
@@ -99,10 +99,10 @@ class CircuitPainter:
         target_y1 = self.ys[x][y+1]-targetradius
         target_x2 = self.xs[x]+targetradius
         target_y2 = self.ys[x][y+1]+targetradius
-        self.canvas.create_oval(control_x1,control_y1,control_x2,control_y2, outline = "white", fill = "white", width = 1)
-        self.canvas.create_oval(target_x1,target_y1,target_x2,target_y2, outline = "white", fill = "black", width = 1)
-        self.canvas.create_line(self.xs[x], self.ys[x][y], self.xs[x], self.ys[x][y+1]+targetradius, width=1)
-        self.canvas.create_line(self.xs[x]-targetradius, self.ys[x][y+1], self.xs[x]+targetradius, self.ys[x][y+1], width=1)
+        self.canvas.create_oval(control_x1,control_y1,control_x2,control_y2, outline = "black", fill = "black", width =1)
+        self.canvas.create_oval(target_x1,target_y1,target_x2,target_y2, outline = "black", fill = "white", width = 1)
+        self.canvas.create_line(self.xs[x], self.ys[x][y], self.xs[x], self.ys[x][y+1]+targetradius, width =1, fill = "black")
+        self.canvas.create_line(self.xs[x]-targetradius, self.ys[x][y+1], self.xs[x]+targetradius, self.ys[x][y+1], width =1, fill = "black")
 
     def divider(self, x, y) -> None:
         x1 = self.xs[x]-self.dividerHeight
@@ -111,19 +111,19 @@ class CircuitPainter:
         y2 = self.ys[x][y]-self.dividerHeight/2
         x3 = self.xs[x]
         y3 = self.ys[x][y]+self.dividerHeight/2
-        self.canvas.create_polygon((x1,y1,x2,y2,x3,y3), fill="white")
+        self.canvas.create_polygon((x1,y1,x2,y2,x3,y3), width =1, outline="black", fill="grey")
 
         if x == 0:
-            self.canvas.create_line(self.xs[x]-self.layerradius,self.ys[x][y],self.xs[x],self.ys[x][y], width=1)
+            self.canvas.create_line(x1-self.layerradius,self.ys[x][y],x1,self.ys[x][y], width =1)
         else:
-            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],self.xs[x],self.ys[x][y], width=1)
+            self.canvas.create_line((self.xs[x-1]+x1)/2,self.ys[x][y],x1,self.ys[x][y], width =1)
 
         if x == len(self.xs)-1:
-            self.canvas.create_line(x2,y2,x2+self.layerradius/3,self.ys[x][y]-self.wireheight/2,x2+self.layerradius,self.ys[x][y]-self.wireheight/2, width=1, smooth=1)
-            self.canvas.create_line(x3,y3,x3+self.layerradius/3,self.ys[x][y]+self.wireheight/2,x3+self.layerradius,self.ys[x][y]+self.wireheight/2, width=1, smooth=1)
+            self.canvas.create_line(x2,y2,x2+self.layerradius/3,self.ys[x][y]-self.wireheight/2,x2+self.layerradius,self.ys[x][y]-self.wireheight/2, width =1, smooth=1)
+            self.canvas.create_line(x3,y3,x3+self.layerradius/3,self.ys[x][y]+self.wireheight/2,x3+self.layerradius,self.ys[x][y]+self.wireheight/2, width =1, smooth=1)
         else:
-            self.canvas.create_line(x2,y2,x2+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]-self.wireheight/2,x2+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]-self.wireheight/2, width=1, smooth=1)
-            self.canvas.create_line(x3,y3,x3+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]+self.wireheight/2,x3+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]+self.wireheight/2, width=1, smooth=1)
+            self.canvas.create_line(x2,y2,x2+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]-self.wireheight/2,x2+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]-self.wireheight/2, width =1, smooth=1)
+            self.canvas.create_line(x3,y3,x3+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]+self.wireheight/2,x3+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]+self.wireheight/2, width =1, smooth=1)
     
     def computeWireHeights(self) -> None:
         pass
