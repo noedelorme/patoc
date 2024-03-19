@@ -1,11 +1,14 @@
 from tkinter import * 
 from tkinter.ttk import *
+from PIL import Image, ImageTk
 from gui.drawing import CircuitDrawing
 from engine import *
 
 class MainWindow:
     def __init__(self) -> None:
         root = Tk()
+        icon = ImageTk.PhotoImage(Image.open(r"icon.png"))
+        root.iconphoto(True, icon)
         root.title("Patoc: a graphical tool for quantum circuits")
         root.config(bg="white")
 
@@ -50,8 +53,6 @@ class MainWindow:
         circuit.connect(13, 14, wiring=(0,0))
         circuit.connect(14, 15, wiring=(0,0))
 
-
-
         # circuit.layers = [
         #     [0,1,2],
         #     [3,4,None],
@@ -66,7 +67,7 @@ class MainWindow:
         #     [12,13]
         # ]
 
-        canvas = Canvas(root, height=300, width=800, bg="lightgrey")
+        canvas = Canvas(root, height=300, width=800, bg="white", highlightthickness=0)
         canvas.pack()
         config = {}
         self.drawing = CircuitDrawing(canvas, circuit, config)

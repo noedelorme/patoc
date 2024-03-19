@@ -108,7 +108,7 @@ class Circuit:
         self.dom = len(org)
         self.cod = len(dst)
 
-        self.nblayers = 11 # todo: compute the max x among all gates
+        # self.nblayers = 11 # todo: compute the max x among all gates
 
         # self.layers = []
 
@@ -124,7 +124,7 @@ class Circuit:
     
     # highly inefficient, should be dynamic programing
     def updateDepth(self) -> None:
-        queue = self.org
+        queue = self.org.copy()
         while len(queue)>0:
             currentgate = self.gates[queue.pop(0)]
             maxpredepth = -1
