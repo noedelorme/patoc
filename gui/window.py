@@ -67,7 +67,7 @@ class MainWindow:
         #     [12,13]
         # ]
 
-        canvas = Canvas(root, height=300, width=800, bg="white", highlightthickness=0)
+        canvas = Canvas(root, height=300, width=650, bg="white", highlightthickness=0)
         canvas.pack()
         config = {}
         self.drawing = CircuitDrawing(canvas, circuit, config)

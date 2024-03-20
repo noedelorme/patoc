@@ -11,60 +11,82 @@ class CircuitDrawing:
         self.deflayerwidth = 50
         self.dividerHeight = 13
         self.layerradius = 25
-        self.p = 50
+        self.p = 70
 
         self.truex = None
         self.truey = None
+        self.nbrows = None
+        self.nbcols = None
 
+        self.computeDimensions()
+        self.computeGgrid()
+        self.computeTrueCoordinates()
+
+        self.drawBackgroundLines()
+        self.drawCircuit()
+        # self.drawIds()
+
+        # def my_callback(event):
+        #     print("oura")
+
+        # x = self.p+self.deflayerwidth
+        # y = self.p/2
+        # rect = self.canvas.create_rectangle(x-5,y-5,x+5,y+5, fill="blue", width=1)
+        # rect.bind("<B1-Motion>", my_callback)
+    
+    def computeDimensions(self) -> None:
         # compute x dimension and true x coordinates
-        nbcols = 0
+        self.nbcols = 0
         for gate in self.circuit.gates:
             x,y = gate.pos
-            nbcols = max(nbcols, x+1)
-        self.truex = [self.p + self.deflayerwidth*i for i in range(nbcols)]
+            self.nbcols = max(self.nbcols, x+1)
 
         # compute y dimensions
-        self.divsAndGaths = [[] for i in range(nbcols)] # list of list of dividers and gatherers in each col
+        self.divsAndGaths = [[] for i in range(self.nbcols)] # list of list of dividers and gatherers in each col
         for gate in self.circuit.gates:
             if gate.type == "D" or gate.type == "G":
                 x,y = gate.pos
                 self.divsAndGaths[x].append(gate)
-        nbrows = [0 for i in range(nbcols)]
-        nbrows[0] = len(self.circuit.org)
-        for x in range(1,nbcols):
-            nbrows[x] += nbrows[x-1]
+        self.nbrows = [0 for i in range(self.nbcols)]
+        self.nbrows[0] = len(self.circuit.org)
+        for x in range(1,self.nbcols):
+            self.nbrows[x] += self.nbrows[x-1]
             for dg in self.divsAndGaths[x]:
-                if dg.type == "D": nbrows[x+1] += 1
-                elif dg.type == "G": nbrows[x+1] -= 1
-
-        # grid[i][j] contains the gate id at position (i,j)
-        grid = [[None for j in range(nbrows[i])] for i in range(nbcols)]
+                if dg.type == "D": self.nbrows[x+1] += 1
+                elif dg.type == "G": self.nbrows[x+1] -= 1
+    
+    def computeGgrid(self) -> None:
+        # self.grid[i][j] contains the gate id at position (i,j)
+        self.grid = [[None for j in range(self.nbrows[i])] for i in range(self.nbcols)]
         for gate in self.circuit.gates:
             x,y = gate.pos
-            grid[x][y] = gate.id
+            self.grid[x][y] = gate.id
+    
+    def computeTrueCoordinates(self) -> None:
+        # compute true x coordinates
+        self.truex = [self.p + self.deflayerwidth*i for i in range(self.nbcols)]
 
         # compute true y coordinates
-        self.truey = [[None for j in range(nbrows[i])] for i in range(nbcols)]
-        previousOutputs = [self.p+i*self.wireheight for i in range(nbrows[0])]
+        self.truey = [[None for j in range(self.nbrows[i])] for i in range(self.nbcols)]
+        previousOutputs = [self.p+i*self.wireheight for i in range(self.nbrows[0])]
         self.truey[0] = previousOutputs.copy()
-        for i in range(1,nbcols):
+        for i in range(1,self.nbcols):
             nextOutputs = []
-            for j in range(nbrows[i]):
+            for j in range(self.nbrows[i]):
                 # if y is the second input of a gather
-                if j>0 and grid[i][j-1] != None and self.circuit.gates[grid[i][j-1]].type == "G":
-                    print("merdouille")
+                if j>0 and self.grid[i][j-1] != None and self.circuit.gates[self.grid[i][j-1]].type == "G":
                     self.truey[i][j] = previousOutputs.pop(0)
                 else:
                     self.truey[i][j] = previousOutputs.pop(0)
-                    if grid[i][j] == None:
+                    if self.grid[i][j] == None:
                         nextOutputs.append(self.truey[i][j])
                     else:
-                        gate = self.circuit.gates[grid[i][j]]
+                        gate = self.circuit.gates[self.grid[i][j]]
                         if gate.type == "D":
                             top = 999
                             bottom = 999
                             if j>0: top = self.truey[i][j]-self.truey[i][j-1]
-                            if j+1<nbrows[i]: bottom = previousOutputs[0]-self.truey[i][j]
+                            if j+1<self.nbrows[i]: bottom = previousOutputs[0]-self.truey[i][j]
                             width = min(top, bottom)*2/3
                             nextOutputs.append(self.truey[i][j]-width/2)
                             nextOutputs.append(self.truey[i][j]+width/2)
@@ -74,21 +96,25 @@ class CircuitDrawing:
                             nextOutputs.append(self.truey[i][j])
             previousOutputs = nextOutputs
 
-
-        self.drawGrid()
-        self.drawCircuit()
-        self.drawIds()
-
     def x(self, i) -> int:
         return self.truex[i]
     
     def y(self, x, i) -> int:
         return self.truey[x][i]
 
-    def drawGrid(self):
+    def drawBackgroundLines(self):
+        # draw vertical lines
         for i in range(len(self.truex)):
-            self.canvas.create_line(self.x(i),self.y(i,0),self.x(i),self.y(i,-1), width=1, fill="#ffdddd", dash=(3,3))
-    
+            self.canvas.create_line(self.x(i),0,self.x(i),self.canvas.cget('height'), width=1, fill="#ffdddd", dash=(3,3))
+        # draw horizontal lines
+        for j in range(len(self.truey[0])):
+            self.canvas.create_line(0,self.y(0,j),self.x(0),self.y(0,j), width=1, fill="#ffdddd", dash=(3,3))
+        for i in range(1,len(self.truex)):
+            for j in range(len(self.truey[i])):
+                self.canvas.create_line(self.x(i-1),self.y(i,j),self.x(i),self.y(i,j), width=1, fill="#ffdddd", dash=(3,3))
+        for j in range(len(self.truey[-1])):
+            self.canvas.create_line(self.x(-1),self.y(-1,j),self.canvas.cget('width'),self.y(-1,j), width=1, fill="#ffdddd", dash=(3,3))
+
     def drawIds(self) -> None:
         for gate in self.circuit.gates:
             x,y = gate.pos
