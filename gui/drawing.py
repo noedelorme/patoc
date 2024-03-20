@@ -13,41 +13,22 @@ class CircuitDrawing:
         self.layerradius = 25
         self.p = 50
 
-        # self.truex = [self.p + self.deflayerwidth*i for i in range(circuit.nblayers)]
-        # self.truey = [
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+62,self.p+100,self.p+125],
-        #     [self.p+25,self.p+50,self.p+75,self.p+100,self.p+125],
-        #     [self.p+25,self.p+50,self.p+75,self.p+100,self.p+125],
-        #     [self.p+25,self.p+50,self.p+75,self.p+100,self.p+125],
-        #     [self.p+37,self.p+75,self.p+100,self.p+125],
-        #     [self.p+56,self.p+100,self.p+125]
-        # ]
-
         self.truex = None
         self.truey = None
-        # self.computeTrueCoords()
 
-
-
-        # compute x dimension and true coordinates
+        # compute x dimension and true x coordinates
         nbcols = 0
         for gate in self.circuit.gates:
             x,y = gate.pos
             nbcols = max(nbcols, x+1)
         self.truex = [self.p + self.deflayerwidth*i for i in range(nbcols)]
 
-        # compute y dimensions and naive true coordinates
+        # compute y dimensions
         self.divsAndGaths = [[] for i in range(nbcols)] # list of list of dividers and gatherers in each col
         for gate in self.circuit.gates:
             if gate.type == "D" or gate.type == "G":
                 x,y = gate.pos
                 self.divsAndGaths[x].append(gate)
-        
         nbrows = [0 for i in range(nbcols)]
         nbrows[0] = len(self.circuit.org)
         for x in range(1,nbcols):
@@ -55,17 +36,15 @@ class CircuitDrawing:
             for dg in self.divsAndGaths[x]:
                 if dg.type == "D": nbrows[x+1] += 1
                 elif dg.type == "G": nbrows[x+1] -= 1
-        # self.truey = [[self.p+j*self.wireheight for j in range(nbrows[i])] for i in range(nbcols)]
 
+        # grid[i][j] contains the gate id at position (i,j)
         grid = [[None for j in range(nbrows[i])] for i in range(nbcols)]
         for gate in self.circuit.gates:
             x,y = gate.pos
             grid[x][y] = gate.id
 
-
-        print(nbcols, nbrows)
+        # compute true y coordinates
         self.truey = [[None for j in range(nbrows[i])] for i in range(nbcols)]
-        # previousOutputs = [self.p,self.p+100,self.p+200,self.p+250]
         previousOutputs = [self.p+i*self.wireheight for i in range(nbrows[0])]
         self.truey[0] = previousOutputs.copy()
         for i in range(1,nbcols):
@@ -99,85 +78,6 @@ class CircuitDrawing:
         self.drawGrid()
         self.drawCircuit()
         self.drawIds()
-    
-    def liftDivider(self,x,y,amount) -> None:
-        """Push down all the coords that are affected by pushing down (x,y)"""
-        self.truey[x][y] += amount
-
-        # push down every coords bellow and right of x,y (y layer included)
-        for i in range(x,-1,-1):
-            layer = self.truey[i]
-            print(len(self.divsAndGaths[i]))
-            if len(self.divsAndGaths[i])==0: # if there is no divider in the layer
-                for yi in range(y,len(layer)):
-                    self.truey[i][yi] += amount
-            else:
-                pass
-
-        # push down every coords bellow and left of x,y
-        for i in range(x+1,self.nbcols):
-            layer = self.truey[i]
-            if len(self.divsAndGaths[i])==0: # if there is no divider in the layer
-                for yi in range(y,len(layer)):
-                    self.truey[i][yi] += amount
-            else:
-                pass
-    
-    def computeTrueCoords(self) -> None:
-        # compute x dimension and true coordinates
-        nbcols = 0
-        for gate in self.circuit.gates:
-            x,y = gate.pos
-            nbcols = max(nbcols, x+1)
-        print("test1", nbcols)
-        self.truex = [self.p + self.deflayerwidth*i for i in range(nbcols)]
-
-        # compute y dimensions and naive true coordinates
-        divsAndGaths = [[] for i in range(nbcols)] # list of list of dividers and gatherers in each col
-        for gate in self.circuit.gates:
-            if gate.type == "D" or gate.type == "G":
-                x,y = gate.pos
-                divsAndGaths[x].append(gate)
-        
-        nbrows = [0 for i in range(nbcols)]
-        nbrows[0] = len(self.circuit.org)
-        for x in range(1,nbcols):
-            if len(divsAndGaths[x])>0:
-                nbrow = nbrows[x-1]
-                for dg in divsAndGaths[x]:
-                    if dg.type == "D": nbrow += 1
-                    elif dg.type == "G": nbrow -= 1
-                nbrows[x] = nbrow
-            else:
-                nbrows[x] = nbrows[x-1]
-        print("test2", nbrows)
-        # self.truey = [[self.p+j*self.wireheight for j in range(nbrows[i])] for i in range(nbcols)]
-
-        grid = [[None for j in range(nbrows[i])] for i in range(nbcols)]
-        for gate in self.circuit.gates:
-            x,y = gate.pos
-            grid[x][y] = gate.id
-
-        print(grid)
-
-        
-
-        # for i in range(1,nbcols):
-        #     for dg in divsAndGaths[i]: # for each div or gath in col i
-
-
-
-        # queue = self.circuit.org.copy()
-        # visited = [False for i in range(len(self.circuit.gates))]
-        # for id in queue: visited[id]=True
-        # while len(queue)>0:
-        #     currentid = queue.pop(0)
-        #     currentgate = self.circuit.gates[currentid]
-        #     x,y = currentgate.pos
-        #     for (idsucc,wiring) in currentgate.postset:
-        #         if not visited[idsucc]:
-        #             queue.append(idsucc)
-        #             visited[idsucc] = True
 
     def x(self, i) -> int:
         return self.truex[i]
@@ -315,7 +215,6 @@ class CircuitDrawing:
 
         # draw gates
         for i in range(len(self.circuit.gates)):
-            # if self.circuit.gates[i].type == "D" or self.circuit.gates[i].type == "G": #temp
             self.drawGate(i)
             gate = self.circuit.gates[i]
             x,y = gate.pos
