@@ -19,20 +19,28 @@ class CircuitDrawing:
         self.nbcols = None
 
         self.computeDimensions()
-        self.computeGgrid()
+        self.computeGrid()
         self.computeTrueCoordinates()
 
         self.drawBackgroundLines()
-        self.drawCircuit()
+        # self.drawCircuit()
         # self.drawIds()
 
-        # def my_callback(event):
-        #     print("oura")
 
-        # x = self.p+self.deflayerwidth
-        # y = self.p/2
-        # rect = self.canvas.create_rectangle(x-5,y-5,x+5,y+5, fill="blue", width=1)
-        # rect.bind("<B1-Motion>", my_callback)
+        e = Gate(0,"E", arity=3, pos=(3,0))
+        cx = Gate(0,"CNOT", pos=(4,[0,1]))
+        f = Gate(0,"F", pos=(4,2))
+        h = Gate(0,"H", arity=4, pos=(0,[2,3,4,5]))
+        j = Gate(0,"J", arity=3, pos=(1,[2,4,5]))
+        k = Gate(0,"K", arity=3, pos=(3,[2,3,5]))
+        self.gate(e)
+        self.gate(cx)
+        self.gate(f)
+        self.gate(h)
+        self.gate(j)
+        self.gate(k)
+
+
     
     def computeDimensions(self) -> None:
         # compute x dimension and true x coordinates
@@ -55,12 +63,15 @@ class CircuitDrawing:
                 if dg.type == "D": self.nbrows[x+1] += 1
                 elif dg.type == "G": self.nbrows[x+1] -= 1
     
-    def computeGgrid(self) -> None:
+    def computeGrid(self) -> None:
         # self.grid[i][j] contains the gate id at position (i,j)
         self.grid = [[None for j in range(self.nbrows[i])] for i in range(self.nbcols)]
         for gate in self.circuit.gates:
             x,y = gate.pos
-            self.grid[x][y] = gate.id
+            if type(y) == int:
+                self.grid[x][y] = gate.id
+            else:
+                for i in y: self.grid[x][i] = gate.id
     
     def computeTrueCoordinates(self) -> None:
         # compute true x coordinates
@@ -135,13 +146,31 @@ class CircuitDrawing:
         y2 = self.y(x,y)+2
         self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="black", width=1)
 
-    def box(self, x, y, text) -> None:
-        x1 = self.x(x)-self.boxheight/2
-        y1 = self.y(x,y)-self.boxheight/2
-        x2 = self.x(x)+self.boxheight/2
-        y2 = self.y(x,y)+self.boxheight/2
-        self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="white", width=1)
-        self.canvas.create_text(self.x(x), self.y(x,y), fill="black", text=text)
+    def gate(self, gate) -> None:
+        x,y = gate.pos
+        if type(y) == int: y = [y]
+        ysorted = sorted([(y[qubit],qubit) for qubit in range(len(y))], key=lambda x: x[0])
+        
+        self.canvas.create_line(self.x(x),self.y(x,ysorted[0][0]),self.x(x),self.y(x,ysorted[-1][0]), width=1, fill="black")
+
+        t,b = 0,0
+        print(ysorted)
+        while b<=len(y)-1:
+            last = t
+            while b<len(y)-1 and ysorted[b+1][0]-ysorted[b][0]<=1:
+                b += 1
+            print(t,b)
+            x1 = self.x(x)-self.boxheight/2
+            y1 = self.y(x,ysorted[t][0])-self.boxheight/2
+            x2 = self.x(x)+self.boxheight/2
+            y2 = self.y(x,ysorted[b][0])+self.boxheight/2
+            self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="white", width=1)
+            self.canvas.create_text(self.x(x), (self.y(x,ysorted[t][0])+self.y(x,ysorted[b][0]))/2, fill="black", text=gate.type)
+            b += 1
+            t = b
+
+        for qubit in range(len(y)):
+            self.canvas.create_text(self.x(x)-14, self.y(x,y[qubit]), fill="green", text=str(qubit))
 
     def cnot(self, x, y) -> None:
         """todo: reverse cnot"""
@@ -208,14 +237,16 @@ class CircuitDrawing:
         x,y = gate.pos
         if gate.type == "in" or gate.type == "out":
             self.bound(x,y)
-        if gate.type == "H":
-            self.box(x,y,"H")
+        elif gate.type == "H":
+            self.box(x,y,gate.dom,"H")
         elif gate.type == "CNOT":
             self.cnot(x,y)
         elif gate.type == "D":
             self.divider(x,y)
         elif gate.type == "G":
             self.gatherer(x,y)
+        else:
+            self.box(x,y,gate.dom,gate.type)
         
     def drawCircuit(self):
         # draw wires
@@ -228,9 +259,7 @@ class CircuitDrawing:
             for (idpred,wiring) in currentgate.preset:
                 gatepred = self.circuit.gates[idpred]
                 xpred,ypred = gatepred.pos
-                if gatepred.type == "D":
-                    self.canvas.create_line(self.x(xpred),self.y(x,y+wiring[1]),self.x(x),self.y(x,y+wiring[1]), fill="black", width=1)
-                elif gatepred.type == "G":
+                if gatepred.type == "D" or gatepred.type == "G":
                     self.canvas.create_line(self.x(xpred),self.y(x,y+wiring[1]),self.x(x),self.y(x,y+wiring[1]), fill="black", width=1)
                 else:
                     self.canvas.create_line(self.x(xpred),self.y(xpred,ypred+wiring[0]),self.x(x),self.y(x,y+wiring[1]), fill="black", width=1)

@@ -12,40 +12,24 @@ class Parameter:
 
 ############################# Gate class #############################
 class Gate:
-    def __init__(self, id, type, dom=1, cod=1, pos=(None,None)) -> None:
+    def __init__(self, id, type, arity=1, pos=(None,None)) -> None:
         """
         Attributs:
             id: int -> id of the node in dag
             type: str -> type of the gate (H, P, CX, D, G, etc.)
-            dom: int -> domain (number of input wires)
-            cod: int -> codomain (number of output wires)
+            arity: int -> domain
             preset: [int] -> list of predecessors ids
             postset: [int] -> list of successors ids
         """
         self.id = id
         self.type = type
-        self.dom = dom
-        self.cod = cod
+        self.arity = arity
         self.preset = []
         self.postset = []
         self.pos = pos
         self.depth = 0 # to compute for patern matching condition
 
-        if type == "in":
-            self.dom = 0
-            self.cod = 1
-        elif type == "out":
-            self.dom = 1
-            self.cod = 0
-        elif type == "CNOT":
-            self.dom = 2
-            self.cod = 2
-        elif type == "D":
-            self.dom = 1
-            self.cod = 2
-        elif type == "G":
-            self.dom = 2
-            self.cod = 1
+        if type == "CNOT": self.arity = 2
 
     def __str__(self) -> str:
         return str(self.preset)+" <<< "+str(self.type)+"("+str(self.id)+") >>> " + str(self.postset)
@@ -93,7 +77,7 @@ class Gate:
 class Circuit:
     """Class of quantum circuits"""
 
-    def __init__(self, name, gates, org, dst) -> None:
+    def __init__(self, name, gates, org) -> None:
         """
         Attributs:
             name: str -> name of the circuit
@@ -104,9 +88,7 @@ class Circuit:
         self.name = name
         self.gates = gates
         self.org = org
-        self.dst = dst
         self.dom = len(org)
-        self.cod = len(dst)
 
         # self.nblayers = 11 # todo: compute the max x among all gates
 
@@ -115,9 +97,9 @@ class Circuit:
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
 
-    def connect(self, idorg, iddst, wiring) -> None:
-        self.gates[idorg].addSuccessor(iddst,wiring)
-        self.gates[iddst].addPredecessor(idorg,wiring)
+    def connect(self, org, dst, wiring) -> None:
+        org.addSuccessor(dst.id,wiring)
+        dst.addPredecessor(org.id,wiring)
     
     def checkConnectivity(self) -> bool:
         return True
