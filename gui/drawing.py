@@ -23,22 +23,9 @@ class CircuitDrawing:
         self.computeTrueCoordinates()
 
         self.drawBackgroundLines()
-        # self.drawCircuit()
+        self.drawCircuit()
         # self.drawIds()
-
-
-        e = Gate(0,"E", arity=3, pos=(3,0))
-        cx = Gate(0,"CNOT", pos=(4,[0,1]))
-        f = Gate(0,"F", pos=(4,2))
-        h = Gate(0,"H", arity=4, pos=(0,[2,3,4,5]))
-        j = Gate(0,"J", arity=3, pos=(1,[2,4,5]))
-        k = Gate(0,"K", arity=3, pos=(3,[2,3,5]))
-        self.gate(e)
-        self.gate(cx)
-        self.gate(f)
-        self.gate(h)
-        self.gate(j)
-        self.gate(k)
+        # self.drawInputs()
 
 
     
@@ -129,7 +116,15 @@ class CircuitDrawing:
     def drawIds(self) -> None:
         for gate in self.circuit.gates:
             x,y = gate.pos
-            self.canvas.create_text(self.x(x)-9, self.y(x,y), fill="#0000ff", text=str(gate.id))
+            if type(y)==int: y = [y]
+            self.canvas.create_text(self.x(x), self.y(x,y[0])-9, fill="#0000ff", text=str(gate.id))
+
+    def drawInputs(self) -> None:
+        for gate in self.circuit.gates:
+            x,y = gate.pos
+            if type(y)==int: y = [y]
+            for qubit in range(len(y)):
+                self.canvas.create_text(self.x(x)-14, self.y(x,y[qubit]), fill="green", text=str(qubit))
     
     def wire(self, x, y) -> None:
         if x == 0:
@@ -152,14 +147,11 @@ class CircuitDrawing:
         ysorted = sorted([(y[qubit],qubit) for qubit in range(len(y))], key=lambda x: x[0])
         
         self.canvas.create_line(self.x(x),self.y(x,ysorted[0][0]),self.x(x),self.y(x,ysorted[-1][0]), width=1, fill="black")
-
         t,b = 0,0
-        print(ysorted)
         while b<=len(y)-1:
             last = t
             while b<len(y)-1 and ysorted[b+1][0]-ysorted[b][0]<=1:
                 b += 1
-            print(t,b)
             x1 = self.x(x)-self.boxheight/2
             y1 = self.y(x,ysorted[t][0])-self.boxheight/2
             x2 = self.x(x)+self.boxheight/2
@@ -169,28 +161,38 @@ class CircuitDrawing:
             b += 1
             t = b
 
-        for qubit in range(len(y)):
-            self.canvas.create_text(self.x(x)-14, self.y(x,y[qubit]), fill="green", text=str(qubit))
+    # def cnot(self, x, y) -> None:
+    #     """todo: reverse cnot"""
+    #     # self.wire(x,y)
+    #     # self.wire(x,y+1)
 
-    def cnot(self, x, y) -> None:
-        """todo: reverse cnot"""
-        # self.wire(x,y)
-        # self.wire(x,y+1)
-
+    #     controlradius = 3
+    #     targetradius = 6
+    #     control_x1 = self.x(x)-controlradius
+    #     control_y1 = self.y(x,y)-controlradius
+    #     control_x2 = self.x(x)+controlradius
+    #     control_y2 = self.y(x,y)+controlradius
+    #     target_x1 = self.x(x)-targetradius
+    #     target_y1 = self.y(x,y+1)-targetradius
+    #     target_x2 = self.x(x)+targetradius
+    #     target_y2 = self.y(x,y+1)+targetradius
+    #     self.canvas.create_oval(control_x1,control_y1,control_x2,control_y2, outline = "black", fill = "black", width =1)
+    #     self.canvas.create_oval(target_x1,target_y1,target_x2,target_y2, outline = "black", fill = "", width = 1)
+    #     self.canvas.create_line(self.x(x), self.y(x,y), self.x(x), self.y(x,y+1)+targetradius, width =1, fill = "black")
+    #     self.canvas.create_line(self.x(x)-targetradius, self.y(x,y+1), self.x(x)+targetradius, self.y(x,y+1), width =1, fill = "black")
+            
+    def cnot(self, gate) -> None:
         controlradius = 3
         targetradius = 6
-        control_x1 = self.x(x)-controlradius
-        control_y1 = self.y(x,y)-controlradius
-        control_x2 = self.x(x)+controlradius
-        control_y2 = self.y(x,y)+controlradius
-        target_x1 = self.x(x)-targetradius
-        target_y1 = self.y(x,y+1)-targetradius
-        target_x2 = self.x(x)+targetradius
-        target_y2 = self.y(x,y+1)+targetradius
-        self.canvas.create_oval(control_x1,control_y1,control_x2,control_y2, outline = "black", fill = "black", width =1)
-        self.canvas.create_oval(target_x1,target_y1,target_x2,target_y2, outline = "black", fill = "", width = 1)
-        self.canvas.create_line(self.x(x), self.y(x,y), self.x(x), self.y(x,y+1)+targetradius, width =1, fill = "black")
-        self.canvas.create_line(self.x(x)-targetradius, self.y(x,y+1), self.x(x)+targetradius, self.y(x,y+1), width =1, fill = "black")
+        x,y = gate.pos
+        xcontrol,ycontrol = self.x(x),self.y(x,y[0])
+        xtarget,ytarget = self.x(x),self.y(x,y[1])
+        self.canvas.create_oval(xcontrol-controlradius,ycontrol-controlradius,xcontrol+controlradius,ycontrol+controlradius, outline = "black", fill = "black", width =1)
+        self.canvas.create_oval(xtarget-targetradius,ytarget-targetradius,xtarget+targetradius,ytarget+targetradius, outline = "black", fill = "", width = 1)
+        ytargetline = ytarget+targetradius
+        if self.y(x,y[0])>self.y(x,y[1]): ytargetline = ytarget-targetradius
+        self.canvas.create_line(xcontrol, ycontrol, xtarget, ytargetline, width =1, fill = "black")
+        self.canvas.create_line(xtarget-targetradius, ytarget, xtarget+targetradius, ytarget, width =1, fill = "black")
 
     def divider(self, x, y) -> None:
         x1 = self.x(x)-self.dividerHeight
@@ -232,21 +234,6 @@ class CircuitDrawing:
         # # draw single output wire 
         # self.canvas.create_line(x1,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], fill="black", width=1)
 
-    def drawGate(self, id) -> None:
-        gate = self.circuit.gates[id]
-        x,y = gate.pos
-        if gate.type == "in" or gate.type == "out":
-            self.bound(x,y)
-        elif gate.type == "H":
-            self.box(x,y,gate.dom,"H")
-        elif gate.type == "CNOT":
-            self.cnot(x,y)
-        elif gate.type == "D":
-            self.divider(x,y)
-        elif gate.type == "G":
-            self.gatherer(x,y)
-        else:
-            self.box(x,y,gate.dom,gate.type)
         
     def drawCircuit(self):
         # draw wires
@@ -256,13 +243,19 @@ class CircuitDrawing:
             currentid = queue.pop(0)
             currentgate = self.circuit.gates[currentid]
             x,y = currentgate.pos
+            if type(y) == int: y = [y]
             for (idpred,wiring) in currentgate.preset:
                 gatepred = self.circuit.gates[idpred]
                 xpred,ypred = gatepred.pos
+                if type(ypred) == int: ypred = [ypred]
                 if gatepred.type == "D" or gatepred.type == "G":
-                    self.canvas.create_line(self.x(xpred),self.y(x,y+wiring[1]),self.x(x),self.y(x,y+wiring[1]), fill="black", width=1)
+                    self.canvas.create_line(self.x(xpred),self.y(x,y[wiring[1]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
                 else:
-                    self.canvas.create_line(self.x(xpred),self.y(xpred,ypred+wiring[0]),self.x(x),self.y(x,y+wiring[1]), fill="black", width=1)
+                    if currentgate.type == "G":
+                        self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(xpred,ypred[wiring[0]]), fill="black", width=1)
+                        pass
+                    else:
+                        self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
             for (idsucc,wiring) in currentgate.postset:
                 if not visited[idsucc]:
                     queue.append(idsucc)
@@ -270,14 +263,28 @@ class CircuitDrawing:
 
         # draw gates
         for i in range(len(self.circuit.gates)):
-            self.drawGate(i)
             gate = self.circuit.gates[i]
             x,y = gate.pos
+            if gate.type == "in" or gate.type == "out":
+                self.bound(x,y)
+            elif gate.type == "CNOT":
+                self.cnot(gate)
+            elif gate.type == "D":
+                self.divider(x,y)
+            elif gate.type == "G":
+                self.gatherer(x,y)
+            else:
+                self.gate(gate)
+            
             if gate.type == "D":
                 succ0 = self.circuit.gates[gate.postset[0][0]]
+                wiring0 = gate.postset[0][1]
                 succ1 = self.circuit.gates[gate.postset[1][0]]
+                wiring1 = gate.postset[1][1]
                 xsucc0,ysucc0 = succ0.pos
+                if type(ysucc0) == int: ysucc0 = [ysucc0]
                 xsucc1,ysucc1 = succ1.pos
-                self.canvas.create_line(self.x(x),self.y(xsucc0,ysucc0),self.x(x),self.y(xsucc1,ysucc1), fill="black", width=1)
+                if type(ysucc1) == int: ysucc1 = [ysucc1]
+                self.canvas.create_line(self.x(x),self.y(xsucc0,ysucc0[wiring0[1]]),self.x(x),self.y(xsucc1,ysucc1[wiring1[1]]), fill="black", width=1)
             elif gate.type == "G":
                 self.canvas.create_line(self.x(x),self.y(x,y),self.x(x),self.y(x,y+1), fill="black", width=1)
