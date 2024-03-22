@@ -90,10 +90,6 @@ class Circuit:
         self.org = org
         self.dom = len(org)
 
-        # self.nblayers = 11 # todo: compute the max x among all gates
-
-        # self.layers = []
-
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
 

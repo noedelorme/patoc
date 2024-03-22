@@ -1,23 +1,26 @@
 from tkinter import *
 from engine import *
+import math
+
+config = {
+    "gatewidth": 20,
+    "yoffset": 40,
+    "xoffset": 50,
+    "dividersize": 13,
+    "padding": 70,
+    "controlradius": 3,
+    "targetradius": 6
+}
 
 class CircuitDrawing:
     def __init__(self, canvas, circuit, config) -> None:
         self.canvas = canvas
         self.circuit = circuit
-        self.circuitlenght = 350
-        self.boxheight = 20
-        self.wireheight = 40
-        self.deflayerwidth = 50
-        self.dividerHeight = 13
-        self.layerradius = 25
-        self.p = 70
 
+        self.nbcols = None
+        self.nbrows = None
         self.truex = None
         self.truey = None
-        self.nbrows = None
-        self.nbcols = None
-
         self.computeDimensions()
         self.computeGrid()
         self.computeTrueCoordinates()
@@ -27,8 +30,6 @@ class CircuitDrawing:
         # self.drawIds()
         # self.drawInputs()
 
-
-    
     def computeDimensions(self) -> None:
         # compute x dimension and true x coordinates
         self.nbcols = 0
@@ -37,7 +38,7 @@ class CircuitDrawing:
             self.nbcols = max(self.nbcols, x+1)
 
         # compute y dimensions
-        self.divsAndGaths = [[] for i in range(self.nbcols)] # list of list of dividers and gatherers in each col
+        self.divsAndGaths = [[] for i in range(self.nbcols)]
         for gate in self.circuit.gates:
             if gate.type == "D" or gate.type == "G":
                 x,y = gate.pos
@@ -62,11 +63,11 @@ class CircuitDrawing:
     
     def computeTrueCoordinates(self) -> None:
         # compute true x coordinates
-        self.truex = [self.p + self.deflayerwidth*i for i in range(self.nbcols)]
+        self.truex = [config["padding"] + config["xoffset"]*i for i in range(self.nbcols)]
 
         # compute true y coordinates
         self.truey = [[None for j in range(self.nbrows[i])] for i in range(self.nbcols)]
-        previousOutputs = [self.p+i*self.wireheight for i in range(self.nbrows[0])]
+        previousOutputs = [config["padding"]+i*config["yoffset"] for i in range(self.nbrows[0])]
         self.truey[0] = previousOutputs.copy()
         for i in range(1,self.nbcols):
             nextOutputs = []
@@ -125,14 +126,6 @@ class CircuitDrawing:
             if type(y)==int: y = [y]
             for qubit in range(len(y)):
                 self.canvas.create_text(self.x(x)-14, self.y(x,y[qubit]), fill="green", text=str(qubit))
-    
-    def wire(self, x, y) -> None:
-        if x == 0:
-            self.canvas.create_line(self.xs[x]-self.layerradius,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], fill="black", width =1)
-        elif x == len(self.xs)-1:
-            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],self.xs[x]+self.layerradius,self.ys[x][y], fill="black", width =1)
-        else:
-            self.canvas.create_line((self.xs[x-1]+self.xs[x])/2,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], fill="black", width =1)
 
     def bound(self, x, y) -> None:
         x1 = self.x(x)-2
@@ -152,88 +145,43 @@ class CircuitDrawing:
             last = t
             while b<len(y)-1 and ysorted[b+1][0]-ysorted[b][0]<=1:
                 b += 1
-            x1 = self.x(x)-self.boxheight/2
-            y1 = self.y(x,ysorted[t][0])-self.boxheight/2
-            x2 = self.x(x)+self.boxheight/2
-            y2 = self.y(x,ysorted[b][0])+self.boxheight/2
+            x1 = self.x(x)-config["gatewidth"]/2
+            y1 = self.y(x,ysorted[t][0])-config["gatewidth"]/2
+            x2 = self.x(x)+config["gatewidth"]/2
+            y2 = self.y(x,ysorted[b][0])+config["gatewidth"]/2
             self.canvas.create_rectangle(x1,y1,x2,y2, outline="black", fill="white", width=1)
             self.canvas.create_text(self.x(x), (self.y(x,ysorted[t][0])+self.y(x,ysorted[b][0]))/2, fill="black", text=gate.type)
             b += 1
             t = b
-
-    # def cnot(self, x, y) -> None:
-    #     """todo: reverse cnot"""
-    #     # self.wire(x,y)
-    #     # self.wire(x,y+1)
-
-    #     controlradius = 3
-    #     targetradius = 6
-    #     control_x1 = self.x(x)-controlradius
-    #     control_y1 = self.y(x,y)-controlradius
-    #     control_x2 = self.x(x)+controlradius
-    #     control_y2 = self.y(x,y)+controlradius
-    #     target_x1 = self.x(x)-targetradius
-    #     target_y1 = self.y(x,y+1)-targetradius
-    #     target_x2 = self.x(x)+targetradius
-    #     target_y2 = self.y(x,y+1)+targetradius
-    #     self.canvas.create_oval(control_x1,control_y1,control_x2,control_y2, outline = "black", fill = "black", width =1)
-    #     self.canvas.create_oval(target_x1,target_y1,target_x2,target_y2, outline = "black", fill = "", width = 1)
-    #     self.canvas.create_line(self.x(x), self.y(x,y), self.x(x), self.y(x,y+1)+targetradius, width =1, fill = "black")
-    #     self.canvas.create_line(self.x(x)-targetradius, self.y(x,y+1), self.x(x)+targetradius, self.y(x,y+1), width =1, fill = "black")
             
     def cnot(self, gate) -> None:
-        controlradius = 3
-        targetradius = 6
         x,y = gate.pos
         xcontrol,ycontrol = self.x(x),self.y(x,y[0])
         xtarget,ytarget = self.x(x),self.y(x,y[1])
-        self.canvas.create_oval(xcontrol-controlradius,ycontrol-controlradius,xcontrol+controlradius,ycontrol+controlradius, outline = "black", fill = "black", width =1)
-        self.canvas.create_oval(xtarget-targetradius,ytarget-targetradius,xtarget+targetradius,ytarget+targetradius, outline = "black", fill = "", width = 1)
-        ytargetline = ytarget+targetradius
-        if self.y(x,y[0])>self.y(x,y[1]): ytargetline = ytarget-targetradius
+        self.canvas.create_oval(xcontrol-config["controlradius"],ycontrol-config["controlradius"],xcontrol+config["controlradius"],ycontrol+config["controlradius"], outline = "black", fill = "black", width =1)
+        self.canvas.create_oval(xtarget-config["targetradius"],ytarget-config["targetradius"],xtarget+config["targetradius"],ytarget+config["targetradius"], outline = "black", fill = "", width = 1)
+        ytargetline = ytarget+config["targetradius"]
+        if self.y(x,y[0])>self.y(x,y[1]): ytargetline = ytarget-config["targetradius"]
         self.canvas.create_line(xcontrol, ycontrol, xtarget, ytargetline, width =1, fill = "black")
-        self.canvas.create_line(xtarget-targetradius, ytarget, xtarget+targetradius, ytarget, width =1, fill = "black")
+        self.canvas.create_line(xtarget-config["targetradius"], ytarget, xtarget+config["targetradius"], ytarget, width =1, fill = "black")
 
     def divider(self, x, y) -> None:
-        x1 = self.x(x)-self.dividerHeight
+        x1 = self.x(x)-config["dividersize"]*math.sqrt(3)/2
         y1 = self.y(x,y)
         x2 = self.x(x)
-        y2 = self.y(x,y)-self.dividerHeight/2
+        y2 = self.y(x,y)-config["dividersize"]/2
         x3 = self.x(x)
-        y3 = self.y(x,y)+self.dividerHeight/2
+        y3 = self.y(x,y)+config["dividersize"]/2
         self.canvas.create_polygon((x1,y1,x2,y2,x3,y3), width =1, outline="black", fill="grey")
-
-        # if x == 0:
-        #     self.canvas.create_line(x1-self.layerradius,self.ys[x][y],x1,self.ys[x][y], fill="black", width =1)
-        # else:
-        #     self.canvas.create_line((self.xs[x-1]+x1)/2,self.ys[x][y],x1,self.ys[x][y], fill="black", width =1)
-
-        # if x == len(self.xs)-1:
-        #     self.canvas.create_line(x2,y2,x2+self.layerradius/3,self.ys[x][y]-self.wireheight/2,x2+self.layerradius,self.ys[x][y]-self.wireheight/2, fill="black", width =1, smooth=1)
-        #     self.canvas.create_line(x3,y3,x3+self.layerradius/3,self.ys[x][y]+self.wireheight/2,x3+self.layerradius,self.ys[x][y]+self.wireheight/2, fill="black", width =1, smooth=1)
-        # else:
-        #     self.canvas.create_line(x2,y2,x2+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]-self.wireheight/2,x2+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]-self.wireheight/2, fill="black", width =1, smooth=1)
-        #     self.canvas.create_line(x3,y3,x3+(self.xs[x+1]-self.xs[x])/2/3,self.ys[x][y]+self.wireheight/2,x3+(self.xs[x+1]-self.xs[x])/2,self.ys[x][y]+self.wireheight/2, fill="black", width =1, smooth=1)
         
     def gatherer(self, x, y) -> None:
-        x1 = self.x(x)+self.dividerHeight
+        x1 = self.x(x)+config["dividersize"]*math.sqrt(3)/2
         y1 = (self.y(x,y)+self.y(x,y+1))/2
         x2 = self.x(x)
-        y2 = y1-self.dividerHeight/2
+        y2 = y1-config["dividersize"]/2
         x3 = self.x(x)
-        y3 = y1+self.dividerHeight/2
+        y3 = y1+config["dividersize"]/2
         self.canvas.create_polygon((x1,y1,x2,y2,x3,y3), width =1, outline="black", fill="grey")
-
-        # # draw top input wire
-        # ##########################################
-        # self.canvas.create_line(x2-(self.xs[x]-self.xs[x-1])/2,self.ys[x][y]-self.wireheight/2,
-        #                         x2-(self.xs[x]-self.xs[x-1])/2/3,self.ys[x][y]-self.wireheight/2,
-        #                         x2,y2, fill="black", width=1, smooth=1)
-        # # draw bottom input wire 
-        # self.canvas.create_line(x2-(self.xs[x]-self.xs[x-1])/2,self.ys[x][y]+self.wireheight/2,x2-(self.xs[x]-self.xs[x-1])/2/3,self.ys[x][y]+self.wireheight/2,x3,y3, fill="black", width=1, smooth=1)
-        # # draw single output wire 
-        # self.canvas.create_line(x1,self.ys[x][y],(self.xs[x]+self.xs[x+1])/2,self.ys[x][y], fill="black", width=1)
-
         
     def drawCircuit(self):
         # draw wires
