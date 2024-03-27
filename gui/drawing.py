@@ -13,7 +13,7 @@ config = {
 }
 
 class CircuitDrawing:
-    def __init__(self, canvas, circuit, config) -> None:
+    def __init__(self, canvas, circuit) -> None:
         self.canvas = canvas
         self.circuit = circuit
 
