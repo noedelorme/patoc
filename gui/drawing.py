@@ -27,7 +27,7 @@ class CircuitDrawing:
 
         self.drawBackgroundLines()
         self.drawCircuit()
-        # self.drawIds()
+        self.drawIds()
         # self.drawInputs()
 
     def computeDimensions(self) -> None:

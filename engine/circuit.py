@@ -27,57 +27,34 @@ class Gate:
         self.preset = []
         self.postset = []
         self.pos = pos
-        self.depth = 0 # to compute for patern matching condition
+        self.depth = None
 
         if type == "CNOT": self.arity = 2
 
     def __str__(self) -> str:
         return str(self.preset)+" <<< "+str(self.type)+"("+str(self.id)+") >>> " + str(self.postset)
     
-    def isConnectable(self, gate) -> bool:
-        return True
-    
     def addPredecessor(self, id, wiring) -> None:
         self.preset.append((id,wiring))
 
     def addSuccessor(self, id, wiring) -> None:
         self.postset.append((id,wiring))
+    
+    def getPredecessorId(self, wire=0) -> int:
+        for (idpre,wiring) in self.preset:
+            if wiring[1] == wire: return idpre
+            
+    def getSuccessorId(self, wire=0) -> int:
+        for (idpost,wiring) in self.postset:
+            if wiring[0] == wire: return idpost
 
-# class Bound(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "", 1, 1, preset, postset, pos)
-
-# class H(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "H", 1, 1, preset, postset, pos)
-
-# class P(Gate):
-#     def __init__(self, id, param, preset=[], postset=[], pos=(None,None)) -> None:
-#         self.param = param
-#         super().__init__(id, "P", 1, 1, preset, postset, pos)
-
-# class SWAP(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "SWAP", 2, 2, preset, postset, pos)
-
-# class CNOT(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "CX", 2, 2, preset, postset, pos)
-
-# class Divider(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "D", 1, 2, preset, postset, pos)
-
-# class Gatherer(Gate):
-#     def __init__(self, id, preset=[], postset=[], pos=(None,None)) -> None:
-#         super().__init__(id, "G", 2, 1, preset, postset, pos)
 
 
 ########################### Circuit class ############################
 class Circuit:
     """Class of quantum circuits"""
 
-    def __init__(self, name, gates, org) -> None:
+    def __init__(self, name) -> None:
         """
         Attributs:
             name: str -> name of the circuit
@@ -86,12 +63,28 @@ class Circuit:
             dst: [int] -> list of destination nodes ids
         """
         self.name = name
-        self.gates = gates
-        self.org = org
-        self.dom = len(org)
+        self.gates = []
+        self.org = []
+        self.dst = []
+        self.dom = 0
+        self.cod = 0
+
+        self.updateDepth()
 
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
+    
+    def gate(self, type, arity=1, pos=(None,None), org=False, dst=False) -> Gate:
+        id = len(self.gates)
+        g = Gate(id, type, arity, pos)
+        self.gates.append(g)
+        if org:
+            self.org.append(id)
+            self.dom += 1
+        if dst:
+            self.dst.append(id)
+            self.cod += 1
+        return g
 
     def connect(self, org, dst, wiring) -> None:
         org.addSuccessor(dst.id,wiring)
@@ -100,15 +93,84 @@ class Circuit:
     def checkConnectivity(self) -> bool:
         return True
     
-    # highly inefficient, should be dynamic programing
     def updateDepth(self) -> None:
-        queue = self.org.copy()
-        while len(queue)>0:
-            currentgate = self.gates[queue.pop(0)]
-            maxpredepth = -1
-            for (qubit,pre) in currentgate.preset:
-                maxpredepth = max(maxpredepth, self.gates[pre].depth)
-            currentgate.depth = maxpredepth+1
-            for (qubit,post) in currentgate.postset:
-                queue.append(post)
-            
+        """USe dynamic programming to compute the depth of every gates"""
+        depths = [None for i in range(len(self.gates))]
+        for idorg in self.org: depths[idorg] = 0
+
+        def computeDepth(id) -> int:
+            maxPredDepth = 0
+            for (idpred,wiring) in self.gates[id].preset:
+                if depths[idpred] == None:
+                    depths[idpred] = computeDepth(idpred)
+                maxPredDepth = max(maxPredDepth,depths[idpred])
+            depths[id] = maxPredDepth+1
+            return  depths[id]
+
+        for iddst in self.dst: computeDepth(iddst)
+        for gate in self.gates: gate.depth = depths[gate.id]
+    
+    # Only works for connected axiom that contains at least one gate for now
+    # but should not be problem because for disconnected axiom, just apply the function to each connected components
+    # and if no gate, then the axiom is applicable evrywhere
+    def matchAxiom(self, axiom) -> None:
+        entryGate = axiom.gates[axiom.gates[axiom.org[0]].postset[0][0]]
+        print("entry gate", entryGate.id)
+        for matchgate in self.gates:
+            if matchgate.type == entryGate.type:
+                print("match entry gate candidate", matchgate.id)
+                # Initialize new matching and new queue
+                matching = [None for i in range(len(axiom.gates))]
+                for idorg in axiom.org: matching[idorg] = -1
+                for iddst in axiom.dst: matching[iddst] = -1
+                matching[entryGate.id] = matchgate.id
+                queue = [entryGate]
+                visited = [False for i in range(len(axiom.gates))]
+                visited[entryGate.id] = True
+
+                matchingFailed = False
+
+                while len(queue)>0:
+                    print("matching", matching)
+                    currentGate = queue.pop(0)
+                    visited[currentGate.id] = True
+                    currentMatchedGateId = matching[currentGate.id] # id of the gate of circuit that is matched to currentGate
+                    currentMatchedGate = self.gates[currentMatchedGateId]
+                    print(currentMatchedGateId)
+
+                    nbpred = len(currentGate.preset)
+                    nbsucc = len(currentGate.postset)
+
+                    for i in range(nbpred):
+                        currentGatePredId = currentGate.getPredecessorId(wire=i)
+                        currentGatePred = axiom.gates[currentGatePredId]
+                        
+                        if not visited[currentGatePredId]:
+                            matchPredCandidateId = currentMatchedGate.getPredecessorId(wire=i)
+                            matchPredCandidate = self.gates[matchPredCandidateId]
+
+                            if currentGatePred.type != "in" and currentGatePred.type != "out":
+                                if matchPredCandidate.type == currentGatePred.type:
+                                    matching[currentGatePredId] = matchPredCandidate.id
+                                    queue.append(currentGatePred)
+                                else:
+                                    matchingFailed = True
+                                    break
+                    if matchingFailed: break
+
+                    for i in range(nbsucc):
+                        currentGateSuccId = currentGate.getSuccessorId(wire=i)
+                        currentGateSucc = axiom.gates[currentGateSuccId]
+
+                        if not visited[currentGateSuccId]:
+                            matchSuccCandidateId = currentMatchedGate.getSuccessorId(wire=i)
+                            matchSuccCandidate = self.gates[matchSuccCandidateId]
+
+                            if currentGateSucc.type != "in" and currentGateSucc.type != "out":
+                                if matchSuccCandidate.type == currentGateSucc.type:
+                                    matching[currentGateSuccId] = matchSuccCandidate.id
+                                    queue.append(currentGateSucc)
+                                else:
+                                    matchingFailed = True
+                                    break
+                    if matchingFailed: break
