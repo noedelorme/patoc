@@ -1,20 +1,120 @@
-from tkinter import * 
-from tkinter.ttk import *
+import tkinter as tk
+import tkinter.ttk as ttk
 from PIL import Image, ImageTk
-from gui.drawing import CircuitDrawing
+from gui.drawing import Drawing
 from engine import *
 
-class MainWindow:
+# LHS of axiom CZ
+czLHS = Circuit("cz-one-cnot")
+CZorg1 = czLHS.gate("in", pos=(0,0), org=True)
+CZorg2 = czLHS.gate("in", pos=(0,1), org=True)
+CZh1 = czLHS.gate("H", pos=(1,1))
+CZcx1 = czLHS.gate("CNOT", pos=(2,[0,1]))
+CZh2 = czLHS.gate("H", pos=(3,1))
+CZdst1 = czLHS.gate("out", pos=(4,0), dst=True)
+CZdst2 = czLHS.gate("out", pos=(4,1), dst=True)
+czLHS.connect(CZorg1, CZcx1, wiring=(0,0))
+czLHS.connect(CZorg2, CZh1, wiring=(0,0))
+czLHS.connect(CZcx1, CZdst1, wiring=(0,0))
+czLHS.connect(CZh1, CZcx1, wiring=(0,1))
+czLHS.connect(CZcx1, CZh2, wiring=(1,0))
+czLHS.connect(CZh2, CZdst2, wiring=(0,0))
+
+# Big circuit containing LHS of axiom CZ
+circuit1 = Circuit("My circuit")
+org1 = circuit1.gate("in", pos=(0,0), org=True)
+org2 = circuit1.gate("in", pos=(0,1), org=True)
+org3 = circuit1.gate("in", pos=(0,2), org=True)
+org4 = circuit1.gate("in", pos=(0,3), org=True)
+h1 = circuit1.gate("H", pos=(1,1))
+a = circuit1.gate("A", arity=2, pos=(1,[2,3]))
+h2 = circuit1.gate("H", pos=(2,2))
+cx1 = circuit1.gate("CNOT", pos=(3,[1,2]))
+h3 = circuit1.gate("H", pos=(4,2))
+b = circuit1.gate("B", arity=2, pos=(4,[0,1]))
+cx2 = circuit1.gate("CNOT", pos=(5,[1,2]))
+dst1 = circuit1.gate("out", pos=(7,0), dst=True)
+dst2 = circuit1.gate("out", pos=(7,1), dst=True)
+dst3 = circuit1.gate("out", pos=(7,2), dst=True)
+dst4 = circuit1.gate("out", pos=(7,3), dst=True)
+h4 = circuit1.gate("H", pos=(6,2))
+circuit1.connect(org1, b, wiring=(0,0))
+circuit1.connect(org2, h1, wiring=(0,0))
+circuit1.connect(org3, a, wiring=(0,0))
+circuit1.connect(org4, a, wiring=(0,1))
+circuit1.connect(a, h2, wiring=(0,0))
+circuit1.connect(a, dst4, wiring=(1,0))
+circuit1.connect(h1, cx1, wiring=(0,0))
+circuit1.connect(h2, cx1, wiring=(0,1))
+circuit1.connect(cx1, b, wiring=(0,1))
+circuit1.connect(cx1, h3, wiring=(1,0))
+circuit1.connect(b, dst1, wiring=(0,0))
+circuit1.connect(b, cx2, wiring=(1,0))
+circuit1.connect(h3, cx2, wiring=(0,1))
+circuit1.connect(cx2, dst2, wiring=(0,0))
+circuit1.connect(cx2, h4, wiring=(1,0))
+circuit1.connect(h4, dst3, wiring=(0,0))
+
+# Sub-circuit of circuit1
+subcircuit1 = Circuit("My sub-circuit")
+org1 = subcircuit1.gate("in", pos=(0,0), org=True)
+org2 = subcircuit1.gate("in", pos=(0,1), org=True)
+org3 = subcircuit1.gate("in", pos=(0,2), org=True)
+h3 = subcircuit1.gate("H", pos=(1,2))
+b = subcircuit1.gate("B", arity=2, pos=(1,[0,1]))
+cx2 = subcircuit1.gate("CNOT", pos=(2,[1,2]))
+dst1 = subcircuit1.gate("out", pos=(3,0), dst=True)
+dst2 = subcircuit1.gate("out", pos=(3,1), dst=True)
+dst3 = subcircuit1.gate("out", pos=(3,2), dst=True)
+subcircuit1.connect(org1, b, wiring=(0,0))
+subcircuit1.connect(org2, b, wiring=(0,1))
+subcircuit1.connect(org3, h3, wiring=(0,0))
+subcircuit1.connect(b, dst1, wiring=(0,0))
+subcircuit1.connect(b, cx2, wiring=(1,0))
+subcircuit1.connect(h3, cx2, wiring=(0,1))
+subcircuit1.connect(cx2, dst2, wiring=(0,0))
+subcircuit1.connect(cx2, dst3, wiring=(1,0))
+
+class App(tk.Tk):
     def __init__(self) -> None:
-        root = Tk()
+        super().__init__()
+        
         icon = ImageTk.PhotoImage(Image.open(r"icon.png"))
-        root.iconphoto(True, icon)
-        root.title("Patoc: a graphical tool for quantum circuits")
-        root.config(bg="white")
+        self.iconphoto(True, icon)
+        self.title("Patoc: a graphical tool for quantum circuits")
+        self.config(bg="white")
+        self.eval('tk::PlaceWindow . center')
+
+        canvas = tk.Canvas(self, height=300, width=650, bg="white", highlightthickness=0)
+        canvas.pack()
+        Drawing(canvas, circuit1)
+
+        canvasaxiom = tk.Canvas(self, height=200, width=650, bg="white", highlightthickness=0)
+        canvasaxiom.pack()
+        Drawing(canvasaxiom, czLHS)
+
+        canvassub= tk.Canvas(self, height=200, width=650, bg="white", highlightthickness=0)
+        canvassub.pack()
+        Drawing(canvassub, subcircuit1)
+
+        # circuit1.matchAxiom(czLHS)
+        circuit1.matchAxiom(subcircuit1)
+
+        
 
 
 
-        # org1 = Gate(0,"in", pos=(0,0))
+
+
+
+
+
+
+
+
+
+
+# org1 = Gate(0,"in", pos=(0,0))
         # org2 = Gate(1,"in", pos=(0,1))
         # org3 = Gate(2,"in", pos=(0,2))
         # org4 = Gate(3,"in", pos=(0,3))
@@ -123,73 +223,3 @@ class MainWindow:
         # circuit.connect(h, j, wiring=(3,2))
         # circuit.connect(j, k, wiring=(2,2))
         # circuit.connect(k, out5, wiring=(2,0))
-
-        # Big circuit containing LHS of axiom CZ
-        circuit = Circuit("My circuit")
-        org1 = circuit.gate("in", pos=(0,0), org=True)
-        org2 = circuit.gate("in", pos=(0,1), org=True)
-        org3 = circuit.gate("in", pos=(0,2), org=True)
-        org4 = circuit.gate("in", pos=(0,3), org=True)
-        h1 = circuit.gate("H", pos=(1,1))
-        a = circuit.gate("A", arity=2, pos=(1,[2,3]))
-        h2 = circuit.gate("H", pos=(2,2))
-        cx1 = circuit.gate("CNOT", pos=(3,[1,2]))
-        h3 = circuit.gate("H", pos=(4,2))
-        b = circuit.gate("B", arity=2, pos=(4,[0,1]))
-        cx2 = circuit.gate("CNOT", pos=(5,[1,2]))
-        dst1 = circuit.gate("out", pos=(7,0), dst=True)
-        dst2 = circuit.gate("out", pos=(7,1), dst=True)
-        dst3 = circuit.gate("out", pos=(7,2), dst=True)
-        dst4 = circuit.gate("out", pos=(7,3), dst=True)
-        circuit.connect(org1, b, wiring=(0,0))
-        circuit.connect(org2, h1, wiring=(0,0))
-        circuit.connect(org3, a, wiring=(0,0))
-        circuit.connect(org4, a, wiring=(0,1))
-        circuit.connect(a, h2, wiring=(0,0))
-        circuit.connect(a, dst4, wiring=(1,0))
-        circuit.connect(h1, cx1, wiring=(0,0))
-        circuit.connect(h2, cx1, wiring=(0,1))
-        circuit.connect(cx1, b, wiring=(0,1))
-        circuit.connect(cx1, h3, wiring=(1,0))
-        circuit.connect(b, dst1, wiring=(0,0))
-        circuit.connect(b, cx2, wiring=(1,0))
-        circuit.connect(h3, cx2, wiring=(0,1))
-        circuit.connect(cx2, dst2, wiring=(0,0))
-        # circuit.connect(cx2, dst3, wiring=(1,0))
-
-        h4 = circuit.gate("H", pos=(6,2))
-        circuit.connect(cx2, h4, wiring=(1,0))
-        circuit.connect(h4, dst3, wiring=(0,0))
-
-
-        # LHS of axiom CZ
-        axiom = Circuit("cz-one-cnot")
-        CZorg1 = axiom.gate("in", pos=(0,0), org=True)
-        CZorg2 = axiom.gate("in", pos=(0,1), org=True)
-        CZh1 = axiom.gate("H", pos=(1,1))
-        CZcx1 = axiom.gate("CNOT", pos=(2,[0,1]))
-        CZh2 = axiom.gate("H", pos=(3,1))
-        CZdst1 = axiom.gate("out", pos=(4,0), dst=True)
-        CZdst2 = axiom.gate("out", pos=(4,1), dst=True)
-        axiom.connect(CZorg1, CZcx1, wiring=(0,0))
-        axiom.connect(CZorg2, CZh1, wiring=(0,0))
-        axiom.connect(CZcx1, CZdst1, wiring=(0,0))
-        axiom.connect(CZh1, CZcx1, wiring=(0,1))
-        axiom.connect(CZcx1, CZh2, wiring=(1,0))
-        axiom.connect(CZh2, CZdst2, wiring=(0,0))
-
-        canvas = Canvas(root, height=300, width=650, bg="white", highlightthickness=0)
-        canvas.pack()
-        self.drawing = CircuitDrawing(canvas, circuit)
-
-        canvasaxiom = Canvas(root, height=200, width=650, bg="white", highlightthickness=0)
-        canvasaxiom.pack()
-        CircuitDrawing(canvasaxiom, axiom)
-
-        circuit.matchAxiom(axiom)
-
-        root.eval('tk::PlaceWindow . center')
-        root.mainloop()
-
-def printtest():
-    print("This is a print from /app/window.py")

@@ -7,12 +7,12 @@ config = {
     "yoffset": 40,
     "xoffset": 50,
     "dividersize": 13,
-    "padding": 70,
+    "padding": 30,
     "controlradius": 3,
     "targetradius": 6
 }
 
-class CircuitDrawing:
+class Drawing:
     def __init__(self, canvas, circuit) -> None:
         self.canvas = canvas
         self.circuit = circuit
@@ -24,11 +24,20 @@ class CircuitDrawing:
         self.computeDimensions()
         self.computeGrid()
         self.computeTrueCoordinates()
+        
+        maxtruey = 0
+        for i in range(self.nbcols):
+            for j in range(self.nbrows[i]):
+                maxtruey = max(maxtruey, self.truey[i][j])
+        self.canvas.config(
+            width=self.truex[-1]+config["padding"],
+            height=maxtruey+config["padding"])
 
         self.drawBackgroundLines()
         self.drawCircuit()
         self.drawIds()
         # self.drawInputs()
+        
 
     def computeDimensions(self) -> None:
         # compute x dimension and true x coordinates
