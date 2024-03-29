@@ -1,5 +1,6 @@
 # import gui as app
-from gui.window import App
+from gui.tk_window import App as TkApp
+from gui.app import Patoc
 from engine import *
 
 config = {
@@ -10,10 +11,12 @@ config = {
 if __name__ == "__main__":
     print("--- Patoc: a graphical tool for quantum circuits ---")
 
-    app = App()
-    app.mainloop()
+    app = Patoc()
+    app.exec()
 
 
+    # app = TkApp()
+    # app.mainloop()
 
 
     # from openqasm3 import parser

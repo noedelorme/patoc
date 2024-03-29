@@ -1,0 +1,1 @@
+# if i want to add a sidebar to the scene for example

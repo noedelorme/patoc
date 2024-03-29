@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import Image, ImageTk
-from gui.drawing import Drawing
+from gui.tk_drawing import Drawing
 from engine import *
 
 # LHS of axiom CZ
