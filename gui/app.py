@@ -9,7 +9,6 @@ class Patoc(QApplication):
         super().__init__()
 
         self.setApplicationName("Patoc")
-        self.setStyle("Universal")
 
         self.main_window = MainWindow()
         self.main_window.setWindowTitle("Patoc")

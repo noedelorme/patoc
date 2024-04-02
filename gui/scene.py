@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
+from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient
-from .items import GateItem
+from .items import GateItem, PlaceholderItem, EdgeItem
 from engine.circuit import Gate
 
 class Scene(QGraphicsScene):
@@ -9,15 +10,28 @@ class Scene(QGraphicsScene):
     def __init__(self) -> None:
         super().__init__()
 
-        self.setBackgroundBrush(QColor(255, 255, 255, 255))
+        self.setBackgroundBrush(QColor("white"))
+        self.drawPlaceholders()
 
-        gate_item1 = GateItem(self, Gate(0, "H"))
-        gate_item2 = GateItem(self, Gate(0, "H"))
+        gate_item1 = GateItem(self, Gate(0, "A", pos=(0,0)))
+        gate_item2 = GateItem(self, Gate(0, "B", pos=(3,0)))
+        gate_item3 = GateItem(self, Gate(0, "C", pos=(4,1)))
         self.addItem(gate_item1)
         self.addItem(gate_item2)
+        self.addItem(gate_item3)
 
-        gate_item1.setPos(0,0)
-        gate_item1.setPos(500,100)
+        edge1 = EdgeItem(None,None)
+        self.addItem(edge1)
+
+
+    def drawPlaceholders(self) -> None:
+        for i in range(10):
+            for j in range(6):
+                place = PlaceholderItem((i,j))
+                self.addItem(place)
+                
+
+    
 
 
 
