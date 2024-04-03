@@ -40,7 +40,7 @@ class Drawing:
         
 
     def computeDimensions(self) -> None:
-        # compute x dimension and true x coordinates
+        # compute x dimension
         self.nbcols = 0
         for gate in self.circuit.gates:
             x,y = gate.pos

@@ -9,6 +9,38 @@ from engine.circuit import Gate
 if TYPE_CHECKING:
     from .scene import Scene
 
+class PlaceholderItem(QGraphicsPathItem):
+    def __init__(self, scene, pos) -> None:
+        super().__init__()
+        self.scene = scene
+
+        self.pos = pos
+    
+        path = QPainterPath()
+        path.addEllipse(12,12,5,5)
+        self.setPen(QPen(QColor(0, 0, 0, 0), 1))
+        self.setBrush(QColor(0, 0, 0, 40))
+        self.setPath(path)
+
+        x,y = pos
+        true_x = self.scene.grid.x(x)
+        true_y = self.scene.grid.y(x,y)
+        self.setPos(true_x,true_y)
+
+class BoundItem(QGraphicsRectItem):
+    def __init__(self, scene, gate: Gate) -> None:
+        super().__init__()
+        self.scene = scene
+        self.gate = gate
+
+        self.setBrush(QColor("black"))
+        self.setRect(12.5,12.5,6,6)
+
+        x,y = gate.pos
+        true_x = self.scene.grid.x(x)
+        true_y = self.scene.grid.y(x,y)
+        self.setPos(true_x,true_y)
+
 class GateItem(QGraphicsItemGroup):
     box_size = 30
     box_pen: QPen = QPen(QColor("black"), 2)
@@ -33,7 +65,10 @@ class GateItem(QGraphicsItemGroup):
         self.addToGroup(self.text)
 
         x,y = self.gate.pos
-        self.setPos(x*50,y*50)
+        if type(y) == int: y = [y]
+        true_x = self.scene.grid.x(x)
+        true_y = self.scene.grid.y(x,y[0])
+        self.setPos(true_x,true_y)
         self.input_pos = ()
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -49,28 +84,18 @@ class GateItem(QGraphicsItemGroup):
         for item in self.scene.items():
             if isinstance(item, PlaceholderItem):
                 if item.sceneBoundingRect().intersects(self.sceneBoundingRect()):
-                    self.gate.pos = (item.x,item.y)
-                    self.setPos(item.x*50,item.y*50)
+                    self.gate.pos = item.pos
+                    x,y = item.pos
+                    if type(y) == int: y = [y]
+                    true_x = self.scene.grid.x(x)
+                    true_y = self.scene.grid.y(x,y[0])
+                    self.setPos(true_x,true_y)
                     return
         x,y = self.gate.pos
-        self.setPos(x*50,y*50)
-        
-class PlaceholderItem(QGraphicsPathItem):
-    box_pen: QPen = QPen(QColor("black"), 2)
-    font = QFont("Times", 12)
-
-    def __init__(self, pos) -> None:
-        super().__init__()
-
-        self.x,self.y = pos
-    
-        path = QPainterPath()
-        # path.addRect(0,0,30,30)
-        path.addEllipse(12,12,5,5)
-        self.setPen(QPen(QColor(0, 0, 0, 0), 1))
-        self.setBrush(QColor(0, 0, 0, 40))
-        self.setPath(path)
-        self.setPos(self.x*50,self.y*50)
+        if type(y) == int: y = [y]
+        true_x = self.scene.grid.x(x)
+        true_y = self.scene.grid.y(x,y[0])
+        self.setPos(true_x,true_y)
 
 
 class MultiGateItem(QGraphicsItemGroup):
