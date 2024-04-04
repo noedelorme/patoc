@@ -28,6 +28,7 @@ class Gate:
         self.postset = []
         self.pos = pos
         self.depth = None
+        self.gate_item = None
 
         if type == "CNOT": self.arity = 2
 
