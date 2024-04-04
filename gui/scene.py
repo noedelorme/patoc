@@ -1,5 +1,6 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
-from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent
+from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient
 
 from engine.circuit import Circuit, Gate
@@ -19,13 +20,9 @@ class Scene(QGraphicsScene):
 
         self.grid = Grid()
         self.grid.setCircuit(circuit1)
-        print(self.grid.nb_cols)
-        print(self.grid.nb_rows)
-        print(self.grid.grid)
-        print(self.grid.true_x)
-        print(self.grid.true_y)
 
         self.drawPlaceholders()
+        self.drawLayers()
         self.drawCircuit()
 
     def setCircuit(self, circuit: Circuit) -> None:
@@ -36,6 +33,16 @@ class Scene(QGraphicsScene):
             for j in range(self.grid.nb_rows[i]):
                 place = PlaceholderItem(self, (i,j))
                 self.addItem(place)
+    
+    def drawLayers(self) -> None:
+        for i in range(self.grid.nb_cols):
+            line = QGraphicsLineItem()
+            line.setCursor(Qt.SizeHorCursor)
+            pen = QPen(QColor(0, 0, 0, 40), 1)
+            pen.setDashPattern((2,8))
+            line.setLine(self.grid.x(i),-50,self.grid.x(i),250)
+            line.setPen(pen)
+            self.addItem(line)
 
     def drawGate(self, gate: Gate) -> None:
         if gate.type == "in" or gate.type == "out":
@@ -56,34 +63,37 @@ class Scene(QGraphicsScene):
         self.addItem(edge)
     
     def drawCircuit(self):
-        for gate in self.circuit.gates: self.drawGate(gate)
+        for gate in self.circuit.gates:
+            if gate.isSparseGate():
+                print("Sparse gates are not yet implemented.")
+            self.drawGate(gate)
 
-        # queue = self.circuit.org.copy()
-        # visited = [(i in queue) for i in range(len(self.circuit.gates))]
-        # while len(queue)>0:
-        #     current_id = queue.pop(0)
-        #     current_gate = self.circuit.gates[current_id]
-        #     x,y = current_gate.pos
-        #     if type(y) == int: y = [y]
-        #     for (id_pred,wiring) in current_gate.preset:
-        #         pred_gate = self.circuit.gates[id_pred]
-        #         x_pred,y_pred = pred_gate.pos
-        #         if type(y_pred) == int: y_pred = [y_pred]
+        queue = self.circuit.org.copy()
+        visited = [(i in queue) for i in range(len(self.circuit.gates))]
+        while len(queue)>0:
+            current_id = queue.pop(0)
+            current_gate = self.circuit.gates[current_id]
+            x,y = current_gate.pos
+            if type(y) == int: y = [y]
+            for (id_pred,wiring) in current_gate.preset:
+                pred_gate = self.circuit.gates[id_pred]
+                x_pred,y_pred = pred_gate.pos
+                if type(y_pred) == int: y_pred = [y_pred]
 
-        #         self.drawEdge(pred_gate.gate_item, current_gate.gate_item, wiring)
+                self.drawEdge(pred_gate.gate_item, current_gate.gate_item, wiring)
 
-        #         # if gatepred.type == "D" or gatepred.type == "G":
-        #         #     self.canvas.create_line(self.x(xpred),self.y(x,y[wiring[1]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
-        #         # else:
-        #         #     if currentgate.type == "G":
-        #         #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(xpred,ypred[wiring[0]]), fill="black", width=1)
-        #         #         pass
-        #         #     else:
-        #         #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
-        #     for (id_succ,wiring) in current_gate.postset:
-        #         if not visited[id_succ]:
-        #             queue.append(id_succ)
-        #             visited[id_succ] = True
+                # if gatepred.type == "D" or gatepred.type == "G":
+                #     self.canvas.create_line(self.x(xpred),self.y(x,y[wiring[1]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
+                # else:
+                #     if currentgate.type == "G":
+                #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(xpred,ypred[wiring[0]]), fill="black", width=1)
+                #         pass
+                #     else:
+                #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
+            for (id_succ,wiring) in current_gate.postset:
+                if not visited[id_succ]:
+                    queue.append(id_succ)
+                    visited[id_succ] = True
             
 
 

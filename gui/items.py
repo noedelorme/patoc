@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItemGroup, QGraphicsPolygonItem, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem, QGraphicsItem, QGraphicsSceneMouseEvent
-from PySide6.QtGui import QColor, QFont, QPen, QBrush, QPainterPath
+from PySide6.QtGui import QColor, QFont, QPen, QBrush, QPainterPath, QCursor
 from engine.circuit import Gate
 
 if TYPE_CHECKING:
@@ -19,8 +19,7 @@ class PlaceholderItem(QGraphicsEllipseItem):
     
         self.setPen(QPen(QColor(0, 0, 0, 0), 1))
         self.setBrush(QColor(0, 0, 0, 40))
-        placeholder_padding = GateItem.box_size/2-self.placeholder_size/2
-        self.setRect(placeholder_padding,placeholder_padding,self.placeholder_size,self.placeholder_size)
+        self.setRect(-self.placeholder_size/2,-self.placeholder_size/2,self.placeholder_size,self.placeholder_size)
 
         x,y = pos
         true_x = self.scene.grid.x(x)
@@ -28,29 +27,31 @@ class PlaceholderItem(QGraphicsEllipseItem):
         self.setPos(true_x,true_y)
 
 class BoundItem(QGraphicsRectItem):
-    bound_size = 6
+    bound_size = 8
 
     def __init__(self, scene, gate: Gate) -> None:
         super().__init__()
         self.scene = scene
         self.gate = gate
 
+        self.setCursor(Qt.SizeVerCursor)
+
         self.setBrush(QColor("black"))
-        bound_padding = GateItem.box_size/2-self.bound_size/2
-        self.setRect(bound_padding,bound_padding,self.bound_size,self.bound_size)
+        self.setRect(-self.bound_size/2,-self.bound_size/2,self.bound_size,self.bound_size)
 
         x,y = gate.pos
         true_x = self.scene.grid.x(x)
         true_y = self.scene.grid.y(x,y)
         self.setPos(true_x,true_y)
 
-        self.input_pos = [(true_x+bound_padding,true_y+bound_padding+self.bound_size/2)]
-        self.output_pos = [(true_x+bound_padding+self.bound_size,true_y+bound_padding+self.bound_size/2)]
+        self.input_pos = [(true_x,true_y)]
+        self.output_pos = [(true_x,true_y)]
 
 class GateItem(QGraphicsItemGroup):
     box_size = 30
     box_pen: QPen = QPen(QColor("black"), 2)
-    font = QFont("Times", 12)
+    font_size = 12
+    font = QFont("Times", font_size)
 
     def __init__(self, scene: Scene, gate: Gate) -> None:
         super().__init__()
@@ -58,26 +59,33 @@ class GateItem(QGraphicsItemGroup):
         self.setZValue(1)
         
         self.gate = gate
+        x,y = self.gate.pos
+        if type(y) == int: y = [y]
+        true_x = self.scene.grid.x(x)
+        true_y_top = self.scene.grid.y(x,y[0])
+        true_y_bottom = self.scene.grid.y(x,y[-1])
+
         self.box = QGraphicsRectItem()
         self.text = QGraphicsTextItem()
         self.text.setPlainText(self.gate.type)
         self.text.setDefaultTextColor(QColor("black"))
         self.text.setFont(self.font)
-        self.text.setPos(5,5)
+        self.text.setPos(-self.font_size+2,-self.font_size+2+(true_y_bottom-true_y_top)/2)
         self.box.setPen(self.box_pen)
         self.box.setBrush(QColor("white"))
-        self.box.setRect(0,0,self.box_size,self.box_size)
-
+        self.box.setRect(-self.box_size/2,-self.box_size/2,self.box_size,true_y_bottom-true_y_top+self.box_size)
         self.addToGroup(self.box)
         self.addToGroup(self.text)
+        self.setPos(true_x,true_y_top)
 
-        x,y = self.gate.pos
-        if type(y) == int: y = [y]
-        true_x = self.scene.grid.x(x)
-        true_y = self.scene.grid.y(x,y[0])
-        self.setPos(true_x,true_y)
-        self.input_pos = [(true_x,true_y+self.box_size/2)]
-        self.output_pos = [(true_x+self.box_size,true_y+self.box_size/2)]
+
+        self.input_pos = []
+        self.output_pos = []
+
+        for i in range(self.gate.dom):
+            true_y = self.scene.grid.y(x,y[i])
+            self.input_pos.append((true_x-self.box_size/2,true_y))
+            self.output_pos.append((true_x+self.box_size/2,true_y))
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -106,9 +114,16 @@ class GateItem(QGraphicsItemGroup):
         self.setPos(true_x,true_y)
 
 
-class ConsecutiveMultiGateItem(QGraphicsItemGroup):
-    def __init__(self) -> None:
+class SparseGateItem(QGraphicsItemGroup):
+    box_size = 30
+    box_pen: QPen = QPen(QColor("black"), 2)
+    font = QFont("Times", 12)
+
+    def __init__(self, scene: Scene, gate: Gate) -> None:
         super().__init__()
+        self.scene = scene
+        self.setZValue(1)
+
 
 
 class CnotItem(QGraphicsItemGroup):
@@ -133,9 +148,7 @@ class CnotItem(QGraphicsItemGroup):
         self.controlItem = QGraphicsEllipseItem()
         self.controlItem.setPen(self.pen)
         self.controlItem.setBrush(self.color)
-        control_padding = GateItem.box_size/2-self.control_radius
-        control_size = 2*self.control_radius
-        self.controlItem.setRect(control_padding,control_padding,control_size,control_size)
+        self.controlItem.setRect(-self.control_radius,-self.control_radius,2*self.control_radius,2*self.control_radius)
         self.addToGroup(self.controlItem)
 
         self.targetItem = QGraphicsPathItem()
@@ -144,23 +157,23 @@ class CnotItem(QGraphicsItemGroup):
         target_padding = GateItem.box_size/2-self.target_radius
         target_size = 2*self.target_radius
         target_relative_y = true_y_target-true_y_control
-        path.addEllipse(target_padding,target_relative_y+target_padding,target_size,target_size)
-        path.moveTo(GateItem.box_size/2,GateItem.box_size/2)
-        path.lineTo(GateItem.box_size/2,target_padding+target_relative_y+target_size) # vertical line
-        path.moveTo(GateItem.box_size/2-self.target_radius,target_relative_y+GateItem.box_size/2)
-        path.lineTo(GateItem.box_size/2+self.target_radius,target_relative_y+GateItem.box_size/2)
+        path.addEllipse(-self.target_radius,target_relative_y-self.target_radius,target_size,target_size)
+        path.moveTo(0,0)
+        path.lineTo(0,target_relative_y+self.target_radius) # vertical line
+        path.moveTo(-self.target_radius,target_relative_y)
+        path.lineTo(self.target_radius,target_relative_y)
         self.targetItem.setPath(path)
         self.addToGroup(self.targetItem)
         
         self.setPos(true_x,true_y)
 
         self.input_pos = [
-            (true_x+control_padding,true_y_control+control_padding+control_size/2),
-            (true_x+target_padding,true_y_target+target_padding+target_size/2)
+            (true_x,true_y_control),
+            (true_x-self.target_radius,true_y_target)
         ]
         self.output_pos = [
-            (true_x+control_padding+control_size,true_y_control+control_padding+control_size/2),
-            (true_x+target_padding+target_size,true_y_target+target_padding+target_size/2)
+            (true_x,true_y_control),
+            (true_x+self.target_radius,true_y_target)
         ]
         
 

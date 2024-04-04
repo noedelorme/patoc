@@ -12,25 +12,25 @@ class Parameter:
 
 ############################# Gate class #############################
 class Gate:
-    def __init__(self, id, type, arity=1, pos=(None,None)) -> None:
+    def __init__(self, id, type, dom=1, pos=(None,None)) -> None:
         """
         Attributs:
             id: int -> id of the node in dag
             type: str -> type of the gate (H, P, CX, D, G, etc.)
-            arity: int -> domain
+            dom: int -> domain
             preset: [int] -> list of predecessors ids
             postset: [int] -> list of successors ids
         """
         self.id = id
         self.type = type
-        self.arity = arity
+        self.dom = dom
         self.preset = []
         self.postset = []
         self.pos = pos
         self.depth = None
         self.gate_item = None
 
-        if type == "CNOT": self.arity = 2
+        if type == "CNOT": self.dom = 2
 
     def __str__(self) -> str:
         return str(self.preset)+" <<< "+str(self.type)+"("+str(self.id)+") >>> " + str(self.postset)
@@ -48,6 +48,15 @@ class Gate:
     def getSuccessorId(self, wire=0) -> int:
         for (idpost,wiring) in self.postset:
             if wiring[0] == wire: return idpost
+
+    def isSparseGate(self) -> bool:
+        """Return True iff the ys of the gate are none consecutive"""
+        x,y = self.pos
+        if not (type(y) == int or len(y)<=1):
+            for i in range(self.dom-1):
+                if y[i+1]-y[i] != 1: return True
+        return False
+        
 
 
 
@@ -75,9 +84,9 @@ class Circuit:
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
     
-    def gate(self, type, arity=1, pos=(None,None), org=False, dst=False) -> Gate:
+    def gate(self, type, dom=1, pos=(None,None), org=False, dst=False) -> Gate:
         id = len(self.gates)
-        g = Gate(id, type, arity, pos)
+        g = Gate(id, type, dom, pos)
         self.gates.append(g)
         if org:
             self.org.append(id)
