@@ -4,19 +4,21 @@ from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsIte
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient
 
 from engine.circuit import Circuit, Gate
-from .items import GateItem, PlaceholderItem, EdgeItem, BoundItem, CnotItem
+from .items import GateItem, PlaceholderItem, EdgeItem, BoundItem, CnotItem, GridLineItem
 from .grid import Grid
 
 from data.examples import czLHS, circuit1, subcircuit1
 
 class Scene(QGraphicsScene):
     """Class for managing the graphical items"""
+
     
     def __init__(self) -> None:
         super().__init__()
 
         self.circuit = circuit1
         self.setBackgroundBrush(QColor("white"))
+        self.setSceneRect(-100,-100,900,500)
 
         self.grid = Grid()
         self.grid.setCircuit(circuit1)
@@ -31,17 +33,13 @@ class Scene(QGraphicsScene):
     def drawPlaceholders(self) -> None:
         for i in range(self.grid.nb_cols):
             for j in range(self.grid.nb_rows[i]):
-                place = PlaceholderItem(self, (i,j))
-                self.addItem(place)
+                if self.grid.grid[i][j] == None:
+                    place = PlaceholderItem(self, (i,j))
+                    self.addItem(place)
     
     def drawLayers(self) -> None:
         for i in range(self.grid.nb_cols):
-            line = QGraphicsLineItem()
-            line.setCursor(Qt.SizeHorCursor)
-            pen = QPen(QColor(0, 0, 0, 40), 1)
-            pen.setDashPattern((2,8))
-            line.setLine(self.grid.x(i),-50,self.grid.x(i),250)
-            line.setPen(pen)
+            line = GridLineItem(self, i)
             self.addItem(line)
 
     def drawGate(self, gate: Gate) -> None:
@@ -59,10 +57,12 @@ class Scene(QGraphicsScene):
             self.addItem(gate_item)
     
     def drawEdge(self, s, t, wiring) -> None:
-        edge = EdgeItem(s,t, wiring)
+        edge = EdgeItem(self, s,t, wiring)
+        s.edges.append(edge)
+        t.edges.append(edge)
         self.addItem(edge)
     
-    def drawCircuit(self):
+    def drawCircuit(self) -> None:
         for gate in self.circuit.gates:
             if gate.isSparseGate():
                 print("Sparse gates are not yet implemented.")
@@ -79,40 +79,16 @@ class Scene(QGraphicsScene):
                 pred_gate = self.circuit.gates[id_pred]
                 x_pred,y_pred = pred_gate.pos
                 if type(y_pred) == int: y_pred = [y_pred]
-
                 self.drawEdge(pred_gate.gate_item, current_gate.gate_item, wiring)
-
-                # if gatepred.type == "D" or gatepred.type == "G":
-                #     self.canvas.create_line(self.x(xpred),self.y(x,y[wiring[1]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
-                # else:
-                #     if currentgate.type == "G":
-                #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(xpred,ypred[wiring[0]]), fill="black", width=1)
-                #         pass
-                #     else:
-                #         self.canvas.create_line(self.x(xpred),self.y(xpred,ypred[wiring[0]]),self.x(x),self.y(x,y[wiring[1]]), fill="black", width=1)
             for (id_succ,wiring) in current_gate.postset:
                 if not visited[id_succ]:
                     queue.append(id_succ)
                     visited[id_succ] = True
-            
-
-
-
-            # if gate.type == "D":
-            #     succ0 = self.circuit.gates[gate.postset[0][0]]
-            #     wiring0 = gate.postset[0][1]
-            #     succ1 = self.circuit.gates[gate.postset[1][0]]
-            #     wiring1 = gate.postset[1][1]
-            #     xsucc0,ysucc0 = succ0.pos
-            #     if type(ysucc0) == int: ysucc0 = [ysucc0]
-            #     xsucc1,ysucc1 = succ1.pos
-            #     if type(ysucc1) == int: ysucc1 = [ysucc1]
-            #     self.canvas.create_line(self.x(x),self.y(xsucc0,ysucc0[wiring0[1]]),self.x(x),self.y(xsucc1,ysucc1[wiring1[1]]), fill="black", width=1)
-            # elif gate.type == "G":
-            #     self.canvas.create_line(self.x(x),self.y(x,y),self.x(x),self.y(x,y+1), fill="black", width=1)
-                
-
     
+    def updatePos(self) -> None:
+        for item in self.items():
+            if isinstance(item, GridLineItem) or isinstance(item, GateItem) or isinstance(item, BoundItem) or isinstance(item, EdgeItem) or isinstance(item, PlaceholderItem):
+                item.updatePos()
 
 
 
