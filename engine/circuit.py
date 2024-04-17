@@ -78,8 +78,7 @@ class Circuit:
         self.dst = []
         self.dom = 0
         self.cod = 0
-
-        self.updateDepth()
+        self.depth = 0
 
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
@@ -104,7 +103,7 @@ class Circuit:
         return True
     
     def updateDepth(self) -> None:
-        """USe dynamic programming to compute the depth of every gates"""
+        """Use dynamic programming to compute the depth of every gates"""
         depths = [None for i in range(len(self.gates))]
         for idorg in self.org: depths[idorg] = 0
 
@@ -119,6 +118,8 @@ class Circuit:
 
         for iddst in self.dst: computeDepth(iddst)
         for gate in self.gates: gate.depth = depths[gate.id]
+
+        self.depth = max(depths)
     
     # Only works for connected axiom that contains at least one gate for now
     # but should not be problem because for disconnected axiom, just apply the function to each connected components

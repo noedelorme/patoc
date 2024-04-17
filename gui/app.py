@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
-from .mainwindow import MainWindow
+from .main_window import MainWindow
 
 class Patoc(QApplication):
     """The Patoc application"""
