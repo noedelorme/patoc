@@ -1,33 +1,61 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPointF, QSizeF
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
-from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem
+from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPainterPath
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
 from .vanity_items import PlaceholderItem, BoundItem, GridLineItem
-from .gate_items import GateItem, NotItem, ControlItem
+from .gate_items import GateItem, NotItem, ControlItem, GateItemGroup
 from .edge_items import EdgeItem
 
 from data.examples import czLHS, circuit1, subcircuit1, circuit2
 
 class Scene(QGraphicsScene):
     """Class for managing the graphical items"""
+
+    grid_size = 200
+    grid_offset = 20
+    real_grid_radius = grid_size*grid_offset
+    grid_pen = QPen(QColor(0, 0, 0, 15), 1)
+    grid_pen_bold = QPen(QColor(0, 0, 0, 15), 2)
     
     def __init__(self) -> None:
         super().__init__()
 
-        self.circuit = circuit1
+        self.circuit = None
+
+        self.setCircuit(circuit1)
         self.setBackgroundBrush(QColor("white"))
-        self.setSceneRect(-100,-100,900,500)
+        real_grid_size = self.grid_size*self.grid_offset
+        self.setSceneRect(-self.real_grid_radius,-self.real_grid_radius,2*self.real_grid_radius,2*self.real_grid_radius)
 
-        self.grid = Grid(circuit1)
+        self.drawGrid()
+        self.computeDefaultCoords()
 
-        self.placeholders = []
+        gate = Gate("H", id=None, dom=3, cod=2, pos=(3,[0,2,6],[1,3]))
+        mtn = GateItemGroup(self, gate)
 
-        self.drawPlaceholders()
-        self.drawLayers()
-        self.drawCircuit()
+
+        test = QGraphicsItemGroup()
+        box = QGraphicsRectItem()
+        box.setBrush(QColor("white"))
+        box.setRect(0,0,30,30)
+        box.setPos(-50,-30)
+        box.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+
+        
+    
+        self.addItem(box)
+
+
+        # self.grid = Grid(circuit1)
+
+        # self.placeholders = []
+
+        # self.drawPlaceholders()
+        # self.drawLayers()
+        # self.drawCircuit()
 
         # # pur faire des arcs
         # path = QPainterPath()
@@ -43,6 +71,29 @@ class Scene(QGraphicsScene):
 
     def setCircuit(self, circuit: Circuit) -> None:
         self.circuit = circuit
+
+    def getPoint(self, x, y) -> QPointF:
+        return QPointF(x*self.grid_offset, y*self.grid_offset)
+    
+    def drawGrid(self) -> None:
+        for i in range(-self.grid_size,self.grid_size+1):
+            line = QGraphicsLineItem()
+            if i%2 == 0: line.setPen(self.grid_pen_bold)
+            else: line.setPen(self.grid_pen)
+            line.setLine(0,0,2*self.real_grid_radius,0)
+            line.setPos(-self.real_grid_radius,i*self.grid_offset)
+            self.addItem(line)
+        for i in range(-self.grid_size,self.grid_size+1):
+            line = QGraphicsLineItem()
+            if i%2 == 0: line.setPen(self.grid_pen_bold)
+            else: line.setPen(self.grid_pen)
+            line.setLine(0,0,0,2*self.real_grid_radius)
+            line.setPos(i*self.grid_offset,-self.real_grid_radius)
+            self.addItem(line)
+    
+    def computeDefaultCoords(self) -> None:
+        self.circuit.updateDepth()
+        self.nb_cols = self.circuit.depth+1
 
     def drawPlaceholders(self) -> None:
         for i in range(self.grid.nb_cols):

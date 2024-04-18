@@ -1,13 +1,90 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPointF, QSizeF, QRectF
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItemGroup, QGraphicsPolygonItem, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem, QGraphicsItem, QGraphicsSceneMouseEvent
 from PySide6.QtGui import QColor, QFont, QPen, QBrush, QPainterPath, QCursor
 from engine.circuit import Gate
 
 if TYPE_CHECKING:
     from .scene import Scene
+
+
+class GateItemGroup:
+    box_size = 30
+    box_pen: QPen = QPen(QColor("black"), 2)
+    font_size = 12
+    font = QFont("Times", font_size)
+    port_size = 5
+    port_pen = QPen(QColor("blue"), 1)
+    port_brush = QBrush(QColor("blue"))
+
+    def __init__(self, scene: Scene, gate: Gate) -> None:
+        self.scene = scene
+        self.gate = gate
+        x,yin,yout = self.gate.pos
+        min_y,max_y = min(yin+yout),max(yin+yout)
+        true_x = x*self.scene.grid_offset
+        true_min_y = min_y*self.scene.grid_offset
+        true_max_y = max_y*self.scene.grid_offset
+        height = true_max_y-true_min_y+self.scene.grid_offset
+
+        self.box = QGraphicsRectItem()
+        self.box.setPen(self.box_pen)
+        self.box.setBrush(QColor("white"))
+        self.box.setRect(-self.box_size/2,-self.scene.grid_offset/2,self.box_size,height)
+        self.box.setPos(true_x,true_min_y)
+        self.scene.addItem(self.box)
+
+
+        def mouseMoveEventPort(e: QGraphicsSceneMouseEvent) -> None:
+            self.setPos(e.scenePos().x(),0)
+
+        self.inputs = []
+        for i in range(self.gate.dom):
+            port = QGraphicsRectItem()
+            y = yin[i]
+            true_y = y*self.scene.grid_offset
+            port.setPen(self.port_pen)
+            port.setBrush(self.port_brush)
+            port.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
+            self.inputs.append(port)
+            port.setPos(true_x-self.box_size/2,true_y)
+            self.scene.addItem(port)
+
+            port.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+            port.mouseMoveEvent = mouseMoveEventPort
+        
+        self.outputs = []
+        for i in range(self.gate.cod):
+            port = QGraphicsRectItem()
+            y = yout[i]
+            true_y = y*self.scene.grid_offset
+            port.setPen(self.port_pen)
+            port.setBrush(self.port_brush)
+            port.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
+            self.outputs.append(port)
+            port.setPos(true_x+self.box_size/2,true_y)
+            self.scene.addItem(port)
+
+            port.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+            port.mouseMoveEvent = mouseMoveEventPort
+
+
+
+        self.text = QGraphicsTextItem()
+        self.text.setPlainText(self.gate.type)
+        self.text.setDefaultTextColor(QColor("black"))
+        self.text.setFont(self.font)
+        self.text.setPos(true_x-self.font_size+2,-self.font_size+2+(true_min_y+true_max_y)/2)
+        self.scene.addItem(self.text)
+
+
+
+
+
+
+
 
 # class DraggableItem(QGraphicsItemGroup):
 #     def __init__(self, scene: Scene, gate: Gate) -> None:

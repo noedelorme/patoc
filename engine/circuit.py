@@ -12,7 +12,7 @@ class Parameter:
 
 ############################# Gate class #############################
 class Gate:
-    def __init__(self, id, type, dom=1, pos=(None,None)) -> None:
+    def __init__(self, type, id=None, dom=1, cod=1, pos=(None,None)) -> None:
         """
         Attributs:
             id: int -> id of the node in dag
@@ -24,6 +24,7 @@ class Gate:
         self.id = id
         self.type = type
         self.dom = dom
+        self.cod = cod
         self.preset = []
         self.postset = []
         self.pos = pos
@@ -83,9 +84,10 @@ class Circuit:
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
     
-    def gate(self, type, dom=1, pos=(None,None), org=False, dst=False) -> Gate:
+    def gate(self, type, dom=1, cod=None, pos=(None,None), org=False, dst=False) -> Gate:
         id = len(self.gates)
-        g = Gate(id, type, dom, pos)
+        if cod == None: cod = dom
+        g = Gate(type, id=id, dom=dom, cod=cod, pos=pos)
         self.gates.append(g)
         if org:
             self.org.append(id)

@@ -10,3 +10,4 @@ class MainWindow(QMainWindow):
         scene = Scene()
         scene_view = SceneView(scene)
         self.setCentralWidget(scene_view)
+        self.setFixedSize(900,500)
