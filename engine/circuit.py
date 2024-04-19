@@ -31,7 +31,9 @@ class Gate:
         self.depth = None
         self.gate_item = None
 
-        if type == "CNOT": self.dom = 2
+        if type == "in": self.dom,self.cod = 0,1
+        elif type == "out": self.dom,self.cod = 1,0
+        elif type == "CNOT": self.dom,self.cod = 2,2
 
     def __str__(self) -> str:
         return str(self.preset)+" <<< "+str(self.type)+"("+str(self.id)+") >>> " + str(self.postset)

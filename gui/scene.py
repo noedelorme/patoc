@@ -5,11 +5,10 @@ from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPai
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
-from .vanity_items import PlaceholderItem, BoundItem, GridLineItem
-from .gate_items import GateItem, NotItem, ControlItem, GateItemGroup
+from .gate_items import GateItemGroup, BoundItem
 from .edge_items import EdgeItem
 
-from data.examples import czLHS, circuit1, subcircuit1, circuit2
+from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity
 from .utils import *
 
 class Scene(QGraphicsScene):
@@ -26,50 +25,42 @@ class Scene(QGraphicsScene):
 
         self.circuit = None
 
-        self.setCircuit(circuit1)
+        self.setCircuit(circuit2)
         self.setBackgroundBrush(QColor("white"))
         real_grid_size = self.grid_size*self.grid_offset
         self.setSceneRect(-self.real_grid_radius,-self.real_grid_radius,2*self.real_grid_radius,2*self.real_grid_radius)
 
         self.drawGrid()
         self.computeDefaultCoords()
+        self.drawCircuit()
+        
 
-        gate = Gate("H", id=None, dom=3, cod=2, pos=(0,[0,2,6],[1,3]))
-        mtn = GateItemGroup(self, gate)
+        # for gate in self.circuit.gates:
+        #     self.drawGateMTN(gate)
 
-
-        # test = QGraphicsItemGroup()
-        # box = QGraphicsRectItem()
-        # box.setBrush(QColor("white"))
-        # box.setRect(0,0,3*self.grid_offset,3*self.grid_offset)
-        # box.setPos(pos(-4),pos(-4))
-
-        # def mouseMoveEventTest(e: QGraphicsSceneMouseEvent) -> None:
-        #     box.setPos(e.scenePos().x(),e.scenePos().y())
-
-        # box.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        # box.mouseMoveEvent = mouseMoveEventTest
-        # self.addItem(box)
+        # gate1 = Gate("H", id=None, dom=3, cod=2, pos=(0,[0,2,6],[1,3]))
+        # mtn1 = GateItemGroup(self, gate1)
 
 
-        # self.grid = Grid(circuit1)
+        # gate2 = Gate("H", id=None, dom=3, cod=2, pos=(6,[0,2,6],[1,3]))
+        # mtn2 = GateItemGroup(self, gate2)
 
-        # self.placeholders = []
+        # edge = EdgeItem(self, mtn1, mtn2, (0,1))
+        # self.addItem(edge)
 
-        # self.drawPlaceholders()
-        # self.drawLayers()
-        # self.drawCircuit()
-
-        # # pur faire des arcs
+        # pur faire des arcs
         # path = QPainterPath()
-        # path.addRect(20, 20, 60, 60)
-        # path.moveTo(0, 0)
-        # path.cubicTo(99, 0, 50, 50, 99, 99)
-        # path.cubicTo(0, 99, 50, 50, 0, 0)
+        # # path.addRect(20, 20, 60, 60)
+        # # path.moveTo(0, 0)
+
+
+        # path.cubicTo(50, 0, 50, 100, 100, 100)
+
         # mtn = QGraphicsPathItem()
         # mtn.setPath(path)
         # pen = QPen(QColor("black"), 2)
         # mtn.setPen(pen)
+        # mtn.setPos(pos(-5),pos(5))
         # self.addItem(mtn)
 
     def setCircuit(self, circuit: Circuit) -> None:
@@ -81,6 +72,7 @@ class Scene(QGraphicsScene):
     def drawGrid(self) -> None:
         for i in range(-self.grid_size,self.grid_size+1):
             line = QGraphicsLineItem()
+            line.setZValue(0)
             if i%2 == 0: line.setPen(self.grid_pen_bold)
             else: line.setPen(self.grid_pen)
             line.setLine(0,0,2*self.real_grid_radius,0)
@@ -88,6 +80,7 @@ class Scene(QGraphicsScene):
             self.addItem(line)
         for i in range(-self.grid_size,self.grid_size+1):
             line = QGraphicsLineItem()
+            line.setZValue(0)
             if i%2 == 0: line.setPen(self.grid_pen_bold)
             else: line.setPen(self.grid_pen)
             line.setLine(0,0,0,2*self.real_grid_radius)
@@ -97,81 +90,36 @@ class Scene(QGraphicsScene):
     def computeDefaultCoords(self) -> None:
         self.circuit.updateDepth()
         self.nb_cols = self.circuit.depth+1
+        current_ys = [-5 for i in range(self.nb_cols)]
 
-    def drawPlaceholders(self) -> None:
-        for i in range(self.grid.nb_cols):
-            for j in range(self.grid.nb_rows[i]):
-                if self.grid.grid[i][j] == None:
-                    place = PlaceholderItem(self, (i,j))
-                    self.placeholders.append(place)
-                    self.addItem(place)
-                    self.grid.grid[i][j] = place
-    
-    def drawLayers(self) -> None:
-        for i in range(self.grid.nb_cols):
-            line = GridLineItem(self, i)
-            self.addItem(line)
-
-    def drawGate(self, gate: Gate) -> None:
-        if gate.type == "in" or gate.type == "out":
-            bound_item = BoundItem(self, gate)
-            gate.gate_item = bound_item
-            self.addItem(bound_item)
-        elif gate.type == "CNOT":
-            # cnot_item = CnotItem(self, gate)
-            # gate.gate_item = cnot_item
-            # self.addItem(cnot_item)
-
-            control = ControlItem(self, gate)
-            target = NotItem(self, gate)
-            gate.gate_item = [control,target]
-            self.addItem(control)
-            self.addItem(target)
-        else:
-            gate_item = GateItem(self, gate)
-            gate.gate_item = gate_item
-            self.addItem(gate_item)
-    
-    def drawEdge(self, s, t, wiring) -> None:
-        s_item = s.gate_item
-        t_item = t.gate_item
-        if s.type == "CNOT":
-            s_item = s.gate_item[wiring[0]]
-            # wiring[0] = 0
-            wiring = (0,wiring[1])
-        if t.type == "CNOT":
-            t_item = t.gate_item[wiring[1]]
-            # wiring[1] = 0
-            wiring = (wiring[0],0)
-        edge = EdgeItem(self, s_item, t_item, wiring)
-        self.addItem(edge)
+        for gate in self.circuit.gates:
+            depth = gate.depth if gate.type != "out" else self.circuit.depth
+            x = 4*depth - 15
+            input_ys = [current_ys[depth]+2*i for i in range(gate.dom)]
+            output_ys = [current_ys[depth]+2*i for i in range(gate.cod)]
+            current_ys[depth] = max(input_ys+output_ys)+3
+            gate.pos = (x, input_ys, output_ys)
     
     def drawCircuit(self) -> None:
         for gate in self.circuit.gates:
-            self.drawGate(gate)
+            if gate.type == "in" or gate.type=="out":
+                gate.gate_item = BoundItem(self, gate)
+            else:
+                gate.gate_item = GateItemGroup(self, gate)
 
         queue = self.circuit.org.copy()
         visited = [(i in queue) for i in range(len(self.circuit.gates))]
         while len(queue)>0:
             current_id = queue.pop(0)
             current_gate = self.circuit.gates[current_id]
-            x,y = current_gate.pos
-            if type(y) == int: y = [y]
             for (id_pred,wiring) in current_gate.preset:
                 pred_gate = self.circuit.gates[id_pred]
-                x_pred,y_pred = pred_gate.pos
-                if type(y_pred) == int: y_pred = [y_pred]
-                self.drawEdge(pred_gate, current_gate, wiring)
+                edge = EdgeItem(self, pred_gate.gate_item, current_gate.gate_item, wiring)
+                self.addItem(edge)
             for (id_succ,wiring) in current_gate.postset:
                 if not visited[id_succ]:
                     queue.append(id_succ)
                     visited[id_succ] = True
-    
-    def updatePos(self) -> None:
-        for item in self.items():
-            if isinstance(item, GridLineItem) or isinstance(item, GateItem) or isinstance(item, BoundItem) or isinstance(item, EdgeItem) or isinstance(item, PlaceholderItem):
-                item.updatePos()
-
 
 
 class SceneView(QGraphicsView):
