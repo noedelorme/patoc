@@ -43,7 +43,7 @@ class GridLineItem(QGraphicsLineItem):
         self.i = i
 
         self.setZValue(0)
-        self.setCursor(Qt.SizeHorCursor)
+        self.setCursor(Qt.SizeVerCursor)
         self.setLine(0,0,0,self.scene.height())
         self.setPen(self.pen)
         self.setPos(self.scene.grid.x(i),self.scene.sceneRect().y())

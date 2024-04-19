@@ -25,26 +25,55 @@ class BoxItem(QGraphicsRectItem):
         super().__init__()
         self.group = group
         self.gate = self.group.gate
-        self.setCursor(Qt.SizeHorCursor)
 
-        x,yin,yout = self.gate.pos
-        min_y,max_y = min(yin+yout),max(yin+yout)
-        true_x = pos(x)
-        true_min_y = pos(min_y-1)
-        true_max_y = pos(max_y+1)
-        height = true_max_y-true_min_y
-        
         self.setPen(self.box_pen)
         self.setBrush(QColor("white"))
-        self.setRect(0,0,pos(self.box_size),height)
-        self.setPos(true_x,true_min_y)
+
+        self.update()
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+    
+    def update(self) -> None:
+        x,yin,yout = self.gate.pos
+        min_y,max_y = min(yin+yout),max(yin+yout)
+        self.x = x
+        self.y = min_y-1
+        height = pos(max_y+1)-pos(min_y-1)
+        self.setRect(0,0,pos(self.box_size),height)
+        self.setPos(pos(self.x),pos(self.y))
 
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        new_x = roundpos(e.scenePos().x()- e.buttonDownPos(Qt.LeftButton).x())
-        new_y = roundpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
-        self.setPos(new_x,new_y)
+        new_x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
+        new_y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
+        self.setPos(pos(new_x),pos(new_y))
+
+        delta_x = new_x-self.x
+        delta_y = new_y-self.y
+
+        for input in self.group.inputs:
+            input.setPos(pos(input.x+delta_x),pos(input.y+delta_y))
+        for output in self.group.outputs:
+            output.setPos(pos(output.x+delta_x+self.group.box_size),pos(output.y+delta_y))
+    
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        old_x, old_y = self.x, self.y
+        self.x, self.y = invpos(self.pos().x()), invpos(self.pos().y())
+
+        delta_x = self.x-old_x
+        delta_y = self.y-old_y
+        input_ys,output_ys = [],[]
+        for input in self.group.inputs:
+            input.x += delta_x
+            input.y += delta_y
+            input_ys.append(input.y)
+        for output in self.group.outputs:
+            output.x += delta_x
+            output.y += delta_y
+            output_ys.append(output.y)
+
+        self.gate.pos = (self.x, input_ys, output_ys)
+        self.group.update()
+
 
 class PortItem(QGraphicsRectItem):
     port_size = 5
@@ -56,7 +85,8 @@ class PortItem(QGraphicsRectItem):
         self.group = group
         self.gate = self.group.gate
         self.type = type
-        self.setCursor(Qt.SizeHorCursor)
+        self.id = id
+        self.setCursor(Qt.SizeVerCursor)
 
         type_id = 1 if type=="in" else 2
         self.x = self.gate.pos[0]
@@ -66,21 +96,27 @@ class PortItem(QGraphicsRectItem):
         self.setBrush(self.port_brush)
         self.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
 
-        self.updatePos()
+        self.update()
 
         
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
     
-    def updatePos(self) -> None:
-        if self.type == "in":
-            self.setPos(pos(self.x),pos(self.y))
-        elif self.type == "out":
-            self.setPos(pos(self.group.box_size+self.x),pos(self.y))
-        else:
-            print("Error: port item's type ('in' or 'out') has not been defined.")
+    def update(self) -> None:
+        x = self.x if self.type == "in" else self.x+self.group.box_size
+        self.setPos(pos(x),roundpos(pos(self.y)))
     
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.setPos(pos(self.x),e.scenePos().y())
+        x = self.x if self.type == "in" else self.x+self.group.box_size
+        self.setPos(pos(x),roundpos(e.scenePos().y()))
+        
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.y = invpos(self.pos().y())
+        x, input_ys, output_ys = self.gate.pos
+        if self.type == "in": input_ys[self.id] = self.y
+        if self.type == "out": output_ys[self.id] = self.y
+        self.gate.pos = (x, input_ys, output_ys)
+        self.group.update()
+
 
 class GateItemGroup:
     default_box_size = 2
@@ -112,19 +148,19 @@ class GateItemGroup:
         self.inputs = []
         for i in range(self.gate.dom):
             port = PortItem(self, "in", i)
+            self.inputs.append(port)
             self.scene.addItem(port)
         
         self.outputs = []
         for i in range(self.gate.cod):
-            port = QGraphicsRectItem()
-            y = yout[i]
-            true_y = y*self.scene.grid_offset
-            port.setPen(self.port_pen)
-            port.setBrush(self.port_brush)
-            port.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
+            port = PortItem(self, "out", i)
             self.outputs.append(port)
-            port.setPos(true_x+pos(self.box_size),true_y)
             self.scene.addItem(port)
+        
+    def update(self) -> None:
+        self.box.update()
+        for input in self.inputs: input.update()
+        for output in self.outputs: output.update()
 
 
 

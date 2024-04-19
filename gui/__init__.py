@@ -1,1 +1,1 @@
-from gui.tk_window import App
+# from gui.tk_window import App

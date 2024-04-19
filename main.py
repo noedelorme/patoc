@@ -1,5 +1,5 @@
 # import gui as app
-from gui.tk_window import App as TkApp
+# from gui.tk_window import App as TkApp
 from gui.app import Patoc
 from engine.circuit import Circuit
 from engine.grid import Grid

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QRect
 from .main_window import MainWindow
 
 class Patoc(QApplication):
@@ -12,4 +13,7 @@ class Patoc(QApplication):
 
         self.main_window = MainWindow()
         self.main_window.setWindowTitle("Patoc")
+        screenrect = self.primaryScreen().geometry()
+        self.main_window.move(screenrect.top(), screenrect.left())
         self.main_window.show()
+        
