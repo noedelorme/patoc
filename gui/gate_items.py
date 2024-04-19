@@ -25,6 +25,7 @@ class BoxItem(QGraphicsRectItem):
         super().__init__()
         self.group = group
         self.gate = self.group.gate
+        self.setCursor(Qt.SizeHorCursor)
 
         x,yin,yout = self.gate.pos
         min_y,max_y = min(yin+yout),max(yin+yout)
@@ -38,23 +39,51 @@ class BoxItem(QGraphicsRectItem):
         self.setRect(0,0,pos(self.box_size),height)
         self.setPos(true_x,true_min_y)
 
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+
+    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        new_x = roundpos(e.scenePos().x()- e.buttonDownPos(Qt.LeftButton).x())
+        new_y = roundpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
+        self.setPos(new_x,new_y)
+
 class PortItem(QGraphicsRectItem):
-    def __init__(self, group: GateItemGroup) -> None:
+    port_size = 5
+    port_pen = QPen(QColor("blue"), 1)
+    port_brush = QBrush(QColor("blue"))
+
+    def __init__(self, group: GateItemGroup, type: str, id: int) -> None:
         super().__init__()
         self.group = group
         self.gate = self.group.gate
+        self.type = type
+        self.setCursor(Qt.SizeHorCursor)
 
-        y = yin[i]
-        true_y = pos(y)
-        port.setPen(self.port_pen)
-        port.setBrush(self.port_brush)
-        port.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
-        self.inputs.append(port)
-        port.setPos(true_x,true_y)
+        type_id = 1 if type=="in" else 2
+        self.x = self.gate.pos[0]
+        self.y = self.gate.pos[type_id][id]
 
+        self.setPen(self.port_pen)
+        self.setBrush(self.port_brush)
+        self.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
+
+        self.updatePos()
+
+        
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+    
+    def updatePos(self) -> None:
+        if self.type == "in":
+            self.setPos(pos(self.x),pos(self.y))
+        elif self.type == "out":
+            self.setPos(pos(self.group.box_size+self.x),pos(self.y))
+        else:
+            print("Error: port item's type ('in' or 'out') has not been defined.")
+    
+    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.setPos(pos(self.x),e.scenePos().y())
 
 class GateItemGroup:
-    box_size = 2
+    default_box_size = 2
     box_pen: QPen = QPen(QColor("black"), 2)
     font_size = 12
     font = QFont("Times", font_size)
@@ -62,9 +91,13 @@ class GateItemGroup:
     port_pen = QPen(QColor("blue"), 1)
     port_brush = QBrush(QColor("blue"))
 
-    def __init__(self, scene: Scene, gate: Gate) -> None:
+    def __init__(self, scene: Scene, gate: Gate, size=None) -> None:
         self.scene = scene
         self.gate = gate
+
+        self.box_size = self.default_box_size if size==None else size
+
+
         x,yin,yout = self.gate.pos
         min_y,max_y = min(yin+yout),max(yin+yout)
         true_x = pos(x)
@@ -76,23 +109,10 @@ class GateItemGroup:
         self.scene.addItem(self.box)
 
 
-        def mouseMoveEventPort(e: QGraphicsSceneMouseEvent) -> None:
-            self.setPos(e.scenePos().x(),0)
-
         self.inputs = []
         for i in range(self.gate.dom):
-            port = QGraphicsRectItem()
-            y = yin[i]
-            true_y = pos(y)
-            port.setPen(self.port_pen)
-            port.setBrush(self.port_brush)
-            port.setRect(-self.port_size/2,-self.port_size/2,self.port_size,self.port_size)
-            self.inputs.append(port)
-            port.setPos(true_x,true_y)
+            port = PortItem(self, "in", i)
             self.scene.addItem(port)
-
-            port.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-            port.mouseMoveEvent = mouseMoveEventPort
         
         self.outputs = []
         for i in range(self.gate.cod):
@@ -105,9 +125,6 @@ class GateItemGroup:
             self.outputs.append(port)
             port.setPos(true_x+pos(self.box_size),true_y)
             self.scene.addItem(port)
-
-            port.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-            port.mouseMoveEvent = mouseMoveEventPort
 
 
 

@@ -10,6 +10,7 @@ from .gate_items import GateItem, NotItem, ControlItem, GateItemGroup
 from .edge_items import EdgeItem
 
 from data.examples import czLHS, circuit1, subcircuit1, circuit2
+from .utils import *
 
 class Scene(QGraphicsScene):
     """Class for managing the graphical items"""
@@ -33,17 +34,22 @@ class Scene(QGraphicsScene):
         self.drawGrid()
         self.computeDefaultCoords()
 
-        gate = Gate("H", id=None, dom=3, cod=2, pos=(2,[0,2,6],[1,3]))
+        gate = Gate("H", id=None, dom=3, cod=2, pos=(0,[0,2,6],[1,3]))
         mtn = GateItemGroup(self, gate)
 
 
-        test = QGraphicsItemGroup()
-        box = QGraphicsRectItem()
-        box.setBrush(QColor("white"))
-        box.setRect(0,0,30,30)
-        box.setPos(-50,-30)
-        box.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.addItem(box)
+        # test = QGraphicsItemGroup()
+        # box = QGraphicsRectItem()
+        # box.setBrush(QColor("white"))
+        # box.setRect(0,0,3*self.grid_offset,3*self.grid_offset)
+        # box.setPos(pos(-4),pos(-4))
+
+        # def mouseMoveEventTest(e: QGraphicsSceneMouseEvent) -> None:
+        #     box.setPos(e.scenePos().x(),e.scenePos().y())
+
+        # box.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        # box.mouseMoveEvent = mouseMoveEventTest
+        # self.addItem(box)
 
 
         # self.grid = Grid(circuit1)
