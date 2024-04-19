@@ -33,7 +33,7 @@ class Scene(QGraphicsScene):
         self.drawGrid()
         self.computeDefaultCoords()
 
-        gate = Gate("H", id=None, dom=3, cod=2, pos=(3,[0,2,6],[1,3]))
+        gate = Gate("H", id=None, dom=3, cod=2, pos=(2,[0,2,6],[1,3]))
         mtn = GateItemGroup(self, gate)
 
 
@@ -43,9 +43,6 @@ class Scene(QGraphicsScene):
         box.setRect(0,0,30,30)
         box.setPos(-50,-30)
         box.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-
-        
-    
         self.addItem(box)
 
 
