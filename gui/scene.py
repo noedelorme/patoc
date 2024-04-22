@@ -5,7 +5,7 @@ from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPai
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
-from .gate_items import GateItemGroup, BoundItem
+from .gate_items import GateGroup, BoundItem, ControlledGateGroup
 from .edge_items import EdgeItem
 
 from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity
@@ -35,33 +35,10 @@ class Scene(QGraphicsScene):
         self.drawCircuit()
         
 
-        # for gate in self.circuit.gates:
-        #     self.drawGateMTN(gate)
 
-        # gate1 = Gate("H", id=None, dom=3, cod=2, pos=(0,[0,2,6],[1,3]))
-        # mtn1 = GateItemGroup(self, gate1)
+        gate = Gate("[3]X", id=None, dom=5, cod=4, pos=(0,[-16,-15,-13,-11,-8],[-16,-15,-13,-11]))
+        mtn = GateGroup(self, gate)
 
-
-        # gate2 = Gate("H", id=None, dom=3, cod=2, pos=(6,[0,2,6],[1,3]))
-        # mtn2 = GateItemGroup(self, gate2)
-
-        # edge = EdgeItem(self, mtn1, mtn2, (0,1))
-        # self.addItem(edge)
-
-        # pur faire des arcs
-        # path = QPainterPath()
-        # # path.addRect(20, 20, 60, 60)
-        # # path.moveTo(0, 0)
-
-
-        # path.cubicTo(50, 0, 50, 100, 100, 100)
-
-        # mtn = QGraphicsPathItem()
-        # mtn.setPath(path)
-        # pen = QPen(QColor("black"), 2)
-        # mtn.setPen(pen)
-        # mtn.setPos(pos(-5),pos(5))
-        # self.addItem(mtn)
 
     def setCircuit(self, circuit: Circuit) -> None:
         self.circuit = circuit
@@ -105,7 +82,7 @@ class Scene(QGraphicsScene):
             if gate.type == "in" or gate.type=="out":
                 gate.gate_item = BoundItem(self, gate)
             else:
-                gate.gate_item = GateItemGroup(self, gate)
+                gate.gate_item = GateGroup(self, gate)
 
         queue = self.circuit.org.copy()
         visited = [(i in queue) for i in range(len(self.circuit.gates))]

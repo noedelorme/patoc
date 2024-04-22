@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsPathItem
 from PySide6.QtGui import QColor, QPen, QPainterPath
 
-from .gate_items import GateItemGroup
+from .gate_items import GateGroup
 
 from .utils import *
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class EdgeItem(QGraphicsPathItem):
-    pen: QPen = QPen(QColor("black"), 2.5)
+    pen: QPen = QPen(QColor("black"), 2)
 
     def __init__(self, scene: Scene, s, t, wiring) -> None:
         super().__init__()

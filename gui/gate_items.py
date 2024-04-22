@@ -12,13 +12,59 @@ if TYPE_CHECKING:
     from .scene import Scene
 
 
+class BoundItem(QGraphicsItemGroup):
+    pen = QPen(QColor("blue"), 2)
+    color = QColor("blue")
+    radius = 3
+
+    def __init__(self, scene: Scene, gate: Gate) -> None:
+        super().__init__()
+        self.scene = scene
+        self.gate = gate
+        self.setZValue(3)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.edges = []
+        self.inputs = [] if self.gate.type == "in" else [self]
+        self.outputs = [self] if self.gate.type == "in" else []
+
+        self.bullet = QGraphicsEllipseItem()
+        self.bullet.setCursor(Qt.OpenHandCursor)
+        self.bullet.setPen(self.pen)
+        self.bullet.setBrush(self.color)
+        self.bullet.setRect(-self.radius,-self.radius,2*self.radius,2*self.radius)
+        self.addToGroup(self.bullet)
+        self.update()
+
+        self.scene.addItem(self)
+    
+    def update(self) -> None:
+        self.x = self.gate.pos[0]
+        self.y = self.gate.pos[2][0] if self.gate.type == "in" else self.gate.pos[1][0]
+        self.setPos(pos(self.x),pos(self.y))
+
+    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.bullet.setCursor(Qt.ClosedHandCursor)
+        new_x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
+        new_y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
+        self.setPos(pos(new_x),pos(new_y))
+        for edge in self.edges: edge.update()
+    
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.bullet.setCursor(Qt.OpenHandCursor)
+        self.x, self.y = invpos(self.pos().x()), invpos(self.pos().y())
+        input_ys = [] if self.gate.type == "in" else [self.y]
+        output_ys = [self.y] if self.gate.type == "in" else []
+        self.gate.pos = (self.x, input_ys, output_ys)
+        self.update()
+
+
 class BoxItem(QGraphicsItemGroup):
     box_pen: QPen = QPen(QColor("black"), 2)
     font_size = 12
     font = QFont("Helvetica", font_size)
     font.setBold(True)
 
-    def __init__(self, group: GateItemGroup) -> None:
+    def __init__(self, group: GateGroup) -> None:
         super().__init__()
         self.group = group
         self.gate = self.group.gate
@@ -26,12 +72,13 @@ class BoxItem(QGraphicsItemGroup):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
 
         self.box = QGraphicsRectItem()
+        self.box.setCursor(Qt.OpenHandCursor)
         self.box.setPen(self.box_pen)
-        self.box.setBrush(QColor(246 , 241 , 234))
+        self.box.setBrush(QColor(240,240,240))
         self.addToGroup(self.box)
 
         self.text = QGraphicsTextItem()
-        self.text.setPlainText(self.gate.type)
+        self.text.setPlainText(self.group.target_type)
         self.text.setDefaultTextColor(QColor("black"))
         
         self.text.setFont(self.font)
@@ -41,15 +88,18 @@ class BoxItem(QGraphicsItemGroup):
     
     def update(self) -> None:
         x,yin,yout = self.gate.pos
-        min_y,max_y = min(yin+yout),max(yin+yout)
+        min_y= min(yin[self.group.nb_controls:]+yout[self.group.nb_controls:])
+        max_y = max(yin[self.group.nb_controls:]+yout[self.group.nb_controls:])
         self.x = x
         self.y = min_y-1
         height = pos(max_y+1)-pos(min_y-1)
         self.box.setRect(0,0,pos(self.group.box_size),height)
         self.setPos(pos(self.x),pos(self.y))
-        self.text.setPos(pos(self.group.box_size)/2-10,height/2-16)
+        self.text.setPos(pos(self.group.box_size)/2-10,height/2-10)
 
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.box.setCursor(Qt.ClosedHandCursor)
+
         new_x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
         new_y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
         self.setPos(pos(new_x),pos(new_y))
@@ -57,20 +107,32 @@ class BoxItem(QGraphicsItemGroup):
         delta_x = new_x-self.x
         delta_y = new_y-self.y
 
+        for control in self.group.controls:
+            control.setPos(pos(control.x+delta_x),pos(control.y+delta_y))
         for input in self.group.inputs:
             input.setPos(pos(input.x+delta_x),pos(input.y+delta_y))
         for output in self.group.outputs:
             output.setPos(pos(output.x+delta_x),pos(output.y+delta_y))
 
+        x_line,y_line = self.group.line.pos().x(),self.group.line.pos().y()
+        self.group.line.setPos(x_line,y_line) # DOESN'T WORK
+
         for edge in self.group.edges: edge.update()
     
     def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.box.setCursor(Qt.OpenHandCursor)
+
         old_x, old_y = self.x, self.y
         self.x, self.y = invpos(self.pos().x()), invpos(self.pos().y())
 
         delta_x = self.x-old_x
         delta_y = self.y-old_y
         input_ys,output_ys = [],[]
+        for control in self.group.controls:
+            control.x += delta_x
+            control.y += delta_y
+            input_ys.append(control.y)
+            output_ys.append(control.y)
         for input in self.group.inputs:
             input.x += delta_x
             input.y += delta_y
@@ -89,7 +151,7 @@ class PortItem(QGraphicsRectItem):
     port_pen = QPen(QColor("blue"), 1)
     port_brush = QBrush(QColor("blue"))
 
-    def __init__(self, group: GateItemGroup, type: str, id: int) -> None:
+    def __init__(self, group: GateGroup, type: str, id: int) -> None:
         super().__init__()
         self.group = group
         self.gate = self.group.gate
@@ -110,7 +172,7 @@ class PortItem(QGraphicsRectItem):
         self.update()
     
     def update(self) -> None:
-        self.setPos(pos(self.x),roundpos(pos(self.y)))
+        self.setPos(pos(self.x),pos(self.y))
     
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
         self.setPos(pos(self.x),roundpos(e.scenePos().y()))
@@ -125,7 +187,45 @@ class PortItem(QGraphicsRectItem):
         self.group.update()
 
 
-class GateItemGroup:
+class ControlItem(QGraphicsEllipseItem):
+    radius = 5
+    control_pen = QPen(QColor("black"), 1)
+    control_brush = QBrush(QColor("black"))
+
+    def __init__(self, group: GateGroup, id: int) -> None:
+        super().__init__()
+        self.group = group
+        self.gate = self.group.gate
+        self.id = id
+        self.setZValue(2)
+        self.setCursor(Qt.SizeVerCursor)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.x = self.gate.pos[0]+int(self.group.box_size/2)
+        self.y = self.gate.pos[1][id]
+
+        self.setPen(self.control_pen)
+        self.setBrush(self.control_brush)
+        self.setRect(-self.radius,-self.radius,2*self.radius,2*self.radius)
+
+        self.update()
+    
+    def update(self) -> None:
+        self.setPos(pos(self.x),pos(self.y))
+    
+    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.setPos(pos(self.x),roundpos(e.scenePos().y()))
+        for edge in self.group.edges: edge.update()
+        
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.y = invpos(self.pos().y())
+        x, input_ys, output_ys = self.gate.pos
+        input_ys[self.id] = self.y
+        output_ys[self.id] = self.y
+        self.gate.pos = (x, input_ys, output_ys)
+        self.group.update()
+
+
+class GateGroup:
     default_box_size = 2
     box_pen: QPen = QPen(QColor("black"), 2)
     font_size = 12
@@ -133,95 +233,97 @@ class GateItemGroup:
     port_size = 5
     port_pen = QPen(QColor("blue"), 1)
     port_brush = QBrush(QColor("blue"))
+    control_pen: QPen = QPen(QColor("black"), 2)
 
     def __init__(self, scene: Scene, gate: Gate, size=None) -> None:
         self.scene = scene
         self.gate = gate
         self.edges = []
-        self.box_size = self.default_box_size if size==None else size
 
+        self.nb_controls, self.target_type = type_parse(self.gate.type)
+
+        self.box_size = self.default_box_size if size==None else size
         self.box = BoxItem(self)
         self.scene.addItem(self.box)
 
-        self.inputs = []
-        for i in range(self.gate.dom):
+        self.controls,self.inputs,self.outputs = [],[],[]
+        for i in range(self.nb_controls):
+            control = ControlItem(self, i)
+            self.controls.append(control)
+            # self.inputs.append(control)
+            # self.outputs.append(control)
+            self.scene.addItem(control)
+        for i in range(self.nb_controls,self.gate.dom):
             port = PortItem(self, "in", i)
             self.inputs.append(port)
             self.scene.addItem(port)
-        self.outputs = []
-        for i in range(self.gate.cod):
+        for i in range(self.nb_controls,self.gate.cod):
             port = PortItem(self, "out", i)
             self.outputs.append(port)
             self.scene.addItem(port)
+
+        self.line = QGraphicsLineItem()
+        self.line.setPen(self.control_pen)
+        self.scene.addItem(self.line)
+
+        self.update()
         
     def update(self) -> None:
+        x,yin,yout = self.gate.pos
+        min_y,max_y = min(yin+yout),max(yin+yout)
+        self.line.setPos(pos(x+int(self.box_size/2)),pos(min_y))
+        self.line.setLine(0,0,0,pos(max_y-min_y))
         for input in self.inputs: input.update()
         for output in self.outputs: output.update()
         self.box.update()
-        for edge in self.edges:
-            edge.update()
+        for edge in self.edges: edge.update()
 
 
-class BoundItem(QGraphicsItemGroup):
-    pen = QPen(QColor("blue"), 2)
-    color = QColor("blue")
-    radius = 3
+
+
+
+
+
+
+
+
+
+class ControlledGateGroup:
+    default_box_size = 2
+    control_pen: QPen = QPen(QColor("black"), 2)
 
     def __init__(self, scene: Scene, gate: Gate) -> None:
-        super().__init__()
         self.scene = scene
         self.gate = gate
-        self.setZValue(3)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.edges = []
-        self.inputs = [] if self.gate.type == "in" else [self]
-        self.outputs = [self] if self.gate.type == "in" else []
 
-        self.bullet = QGraphicsEllipseItem()
-        self.bullet.setPen(self.pen)
-        self.bullet.setBrush(self.color)
-        self.bullet.setRect(-self.radius,-self.radius,2*self.radius,2*self.radius)
-        self.addToGroup(self.bullet)
+        self.nb_controls = int(self.gate.type.split("]")[0][1:])
+        target_type = self.gate.type.split("]")[1]
+        target_pos = (self.gate.pos[0],self.gate.pos[1][self.nb_controls:],self.gate.pos[2][self.nb_controls:])
+        print(target_pos,self.gate.dom-self.nb_controls)
+        self.target_gate = Gate(target_type, self.gate.id, dom=self.gate.dom-self.nb_controls, cod=self.gate.cod-self.nb_controls, pos=target_pos)
+        self.target = GateGroup(self.scene, self.target_gate)
+
+        self.controls = []
+        for i in range(self.nb_controls):
+            control = ControlItem(self, i)
+            self.controls.append(control)
+            self.scene.addItem(control)
+
+        self.line = QGraphicsLineItem()
+        self.line.setPen(self.control_pen)
+        self.scene.addItem(self.line)
+
         self.update()
-
-        self.scene.addItem(self)
-    
+        
     def update(self) -> None:
-        self.x = self.gate.pos[0]
-        self.y = self.gate.pos[2][0] if self.gate.type == "in" else self.gate.pos[1][0]
-        self.setPos(pos(self.x),pos(self.y))
-
-    def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        new_x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
-        new_y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
-        self.setPos(pos(new_x),pos(new_y))
-        for edge in self.edges: edge.update()
-    
-    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.x, self.y = invpos(self.pos().x()), invpos(self.pos().y())
-        input_ys = [] if self.gate.type == "in" else [self.y]
-        output_ys = [self.y] if self.gate.type == "in" else []
-        self.gate.pos = (self.x, input_ys, output_ys)
-        self.update()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.target.update()
+        for control in self.controls: control.update()
+        x = self.gate.pos[0]
+        x,yin,yout = self.gate.pos
+        min_y,max_y = min(yin+yout),max(yin+yout)
+        self.line.setPos(pos(x+int(self.target.box_size/2)),pos(min_y))
+        self.line.setLine(0,0,0,pos(max_y-min_y))
 
 
 
