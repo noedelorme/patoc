@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsPathItem
 from PySide6.QtGui import QColor, QPen, QPainterPath
 
-from .gate_items import GateGroup
+from .gate_items import GateGroup, BoundItem
 
 from .utils import *
 
@@ -33,10 +33,14 @@ class EdgeItem(QGraphicsPathItem):
         self.update()
     
     def update(self) -> None:
-        x1 = self.s.outputs[self.wiring[0]].pos().x()
-        y1 = self.s.outputs[self.wiring[0]].pos().y()
-        x2 = self.t.inputs[self.wiring[1]].pos().x()
-        y2 = self.t.inputs[self.wiring[1]].pos().y()
+        nb_controls_s = 0 if isinstance(self.s, BoundItem) else self.s.nb_controls
+        nb_controls_t = 0 if isinstance(self.t, BoundItem) else self.t.nb_controls
+        outputs_s = self.s.controls if self.wiring[0]<nb_controls_s else self.s.outputs
+        inputs_t = self.t.controls if self.wiring[1]<nb_controls_t else self.t.inputs
+        x1 = outputs_s[self.wiring[0]-nb_controls_s].pos().x()
+        y1 = outputs_s[self.wiring[0]-nb_controls_s].pos().y()
+        x2 = inputs_t[self.wiring[1]-nb_controls_t].pos().x()
+        y2 = inputs_t[self.wiring[1]-nb_controls_t].pos().y()
         delta_x = x2-x1
         delta_y = y2-y1
         self.setPos(x1, y1)

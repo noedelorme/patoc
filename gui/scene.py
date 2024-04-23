@@ -5,18 +5,17 @@ from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPai
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
-from .gate_items import GateGroup, BoundItem, ControlledGateGroup
+from .gate_items import GateGroup, BoundItem
 from .edge_items import EdgeItem
 
-from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity
+from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity, fullexample
 from .utils import *
 
 class Scene(QGraphicsScene):
     """Class for managing the graphical items"""
 
     grid_size = 200
-    grid_offset = 20
-    real_grid_radius = grid_size*grid_offset
+    real_grid_radius = pos(grid_size)
     grid_pen = QPen(QColor(0, 0, 0, 15), 1)
     grid_pen_bold = QPen(QColor(0, 0, 0, 15), 2)
     
@@ -25,26 +24,19 @@ class Scene(QGraphicsScene):
 
         self.circuit = None
 
-        self.setCircuit(circuit2)
+        self.setCircuit(fullexample)
         self.setBackgroundBrush(QColor("white"))
-        real_grid_size = self.grid_size*self.grid_offset
         self.setSceneRect(-self.real_grid_radius,-self.real_grid_radius,2*self.real_grid_radius,2*self.real_grid_radius)
 
         self.drawGrid()
         self.computeDefaultCoords()
         self.drawCircuit()
-        
-
-
-        gate = Gate("[3]X", id=None, dom=5, cod=4, pos=(0,[-16,-15,-13,-11,-8],[-16,-15,-13,-11]))
-        mtn = GateGroup(self, gate)
-
 
     def setCircuit(self, circuit: Circuit) -> None:
         self.circuit = circuit
 
     def getPoint(self, x, y) -> QPointF:
-        return QPointF(x*self.grid_offset, y*self.grid_offset)
+        return QPointF(pos(x), pos(y))
     
     def drawGrid(self) -> None:
         for i in range(-self.grid_size,self.grid_size+1):
@@ -53,7 +45,7 @@ class Scene(QGraphicsScene):
             if i%2 == 0: line.setPen(self.grid_pen_bold)
             else: line.setPen(self.grid_pen)
             line.setLine(0,0,2*self.real_grid_radius,0)
-            line.setPos(-self.real_grid_radius,i*self.grid_offset)
+            line.setPos(-self.real_grid_radius,pos(i))
             self.addItem(line)
         for i in range(-self.grid_size,self.grid_size+1):
             line = QGraphicsLineItem()
@@ -61,7 +53,7 @@ class Scene(QGraphicsScene):
             if i%2 == 0: line.setPen(self.grid_pen_bold)
             else: line.setPen(self.grid_pen)
             line.setLine(0,0,0,2*self.real_grid_radius)
-            line.setPos(i*self.grid_offset,-self.real_grid_radius)
+            line.setPos(pos(i),-self.real_grid_radius)
             self.addItem(line)
     
     def computeDefaultCoords(self) -> None:
@@ -75,6 +67,11 @@ class Scene(QGraphicsScene):
             input_ys = [current_ys[depth]+2*i for i in range(gate.dom)]
             output_ys = [current_ys[depth]+2*i for i in range(gate.cod)]
             current_ys[depth] = max(input_ys+output_ys)+3
+            gate.pos = (x, input_ys, output_ys)
+        for id in self.circuit.org:
+            gate = self.circuit.gates[id]
+            x, input_ys, output_ys = gate.pos
+            x += 2
             gate.pos = (x, input_ys, output_ys)
     
     def drawCircuit(self) -> None:

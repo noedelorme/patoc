@@ -98,35 +98,12 @@ class BoxItem(QGraphicsItemGroup):
         self.text.setPos(pos(self.group.box_size)/2-10,height/2-10)
 
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.box.setCursor(Qt.ClosedHandCursor)
-
-        new_x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
-        new_y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
-        self.setPos(pos(new_x),pos(new_y))
-
-        delta_x = new_x-self.x
-        delta_y = new_y-self.y
-
-        for control in self.group.controls:
-            control.setPos(pos(control.x+delta_x),pos(control.y+delta_y))
-        for input in self.group.inputs:
-            input.setPos(pos(input.x+delta_x),pos(input.y+delta_y))
-        for output in self.group.outputs:
-            output.setPos(pos(output.x+delta_x),pos(output.y+delta_y))
-
-        x_line,y_line = self.group.line.pos().x(),self.group.line.pos().y()
-        self.group.line.setPos(x_line,y_line) # DOESN'T WORK
-
-        for edge in self.group.edges: edge.update()
-    
-    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.box.setCursor(Qt.OpenHandCursor)
-
         old_x, old_y = self.x, self.y
-        self.x, self.y = invpos(self.pos().x()), invpos(self.pos().y())
-
+        self.x = invpos(e.scenePos().x()-e.buttonDownPos(Qt.LeftButton).x())
+        self.y = invpos(e.scenePos().y()-e.buttonDownPos(Qt.LeftButton).y())
         delta_x = self.x-old_x
         delta_y = self.y-old_y
+
         input_ys,output_ys = [],[]
         for control in self.group.controls:
             control.x += delta_x
@@ -141,9 +118,15 @@ class BoxItem(QGraphicsItemGroup):
             output.x += delta_x
             output.y += delta_y
             output_ys.append(output.y)
-
         self.gate.pos = (self.x, input_ys, output_ys)
+        
         self.group.update()
+    
+    def mousePressEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.box.setCursor(Qt.ClosedHandCursor)
+    
+    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
+        self.box.setCursor(Qt.OpenHandCursor)
 
 
 class PortItem(QGraphicsRectItem):
@@ -175,11 +158,7 @@ class PortItem(QGraphicsRectItem):
         self.setPos(pos(self.x),pos(self.y))
     
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.setPos(pos(self.x),roundpos(e.scenePos().y()))
-        for edge in self.group.edges: edge.update()
-        
-    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.y = invpos(self.pos().y())
+        self.y = invpos(e.scenePos().y())
         x, input_ys, output_ys = self.gate.pos
         if self.type == "in": input_ys[self.id] = self.y
         if self.type == "out": output_ys[self.id] = self.y
@@ -213,11 +192,7 @@ class ControlItem(QGraphicsEllipseItem):
         self.setPos(pos(self.x),pos(self.y))
     
     def mouseMoveEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.setPos(pos(self.x),roundpos(e.scenePos().y()))
-        for edge in self.group.edges: edge.update()
-        
-    def mouseReleaseEvent(self, e: QGraphicsSceneMouseEvent) -> None:
-        self.y = invpos(self.pos().y())
+        self.y = invpos(e.scenePos().y())
         x, input_ys, output_ys = self.gate.pos
         input_ys[self.id] = self.y
         output_ys[self.id] = self.y
@@ -273,6 +248,7 @@ class GateGroup:
         min_y,max_y = min(yin+yout),max(yin+yout)
         self.line.setPos(pos(x+int(self.box_size/2)),pos(min_y))
         self.line.setLine(0,0,0,pos(max_y-min_y))
+        for control in self.controls: control.update()
         for input in self.inputs: input.update()
         for output in self.outputs: output.update()
         self.box.update()
@@ -282,48 +258,6 @@ class GateGroup:
 
 
 
-
-
-
-
-
-
-class ControlledGateGroup:
-    default_box_size = 2
-    control_pen: QPen = QPen(QColor("black"), 2)
-
-    def __init__(self, scene: Scene, gate: Gate) -> None:
-        self.scene = scene
-        self.gate = gate
-        self.edges = []
-
-        self.nb_controls = int(self.gate.type.split("]")[0][1:])
-        target_type = self.gate.type.split("]")[1]
-        target_pos = (self.gate.pos[0],self.gate.pos[1][self.nb_controls:],self.gate.pos[2][self.nb_controls:])
-        print(target_pos,self.gate.dom-self.nb_controls)
-        self.target_gate = Gate(target_type, self.gate.id, dom=self.gate.dom-self.nb_controls, cod=self.gate.cod-self.nb_controls, pos=target_pos)
-        self.target = GateGroup(self.scene, self.target_gate)
-
-        self.controls = []
-        for i in range(self.nb_controls):
-            control = ControlItem(self, i)
-            self.controls.append(control)
-            self.scene.addItem(control)
-
-        self.line = QGraphicsLineItem()
-        self.line.setPen(self.control_pen)
-        self.scene.addItem(self.line)
-
-        self.update()
-        
-    def update(self) -> None:
-        self.target.update()
-        for control in self.controls: control.update()
-        x = self.gate.pos[0]
-        x,yin,yout = self.gate.pos
-        min_y,max_y = min(yin+yout),max(yin+yout)
-        self.line.setPos(pos(x+int(self.target.box_size/2)),pos(min_y))
-        self.line.setLine(0,0,0,pos(max_y-min_y))
 
 
 
