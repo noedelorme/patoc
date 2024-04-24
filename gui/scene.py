@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QPointF, QSizeF
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
-from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPainterPath
+from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPainterPath, QPolygonF
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
@@ -31,6 +31,20 @@ class Scene(QGraphicsScene):
         self.drawGrid()
         self.computeDefaultCoords()
         self.drawCircuit()
+
+
+        mtn = QGraphicsPathItem()
+        mtn.setPen(QPen(QColor("black"), 1))
+        mtn.setBrush(QColor("black"))
+
+        path = QPainterPath()
+        poly = QPolygonF([QPointF(0-pos(1)/2,0-pos(1)/2),QPointF(0-pos(1)/2,pos(1)-pos(1)/2),QPointF(pos(1)-pos(1)/2,pos(1)/2-pos(1)/2),QPointF(0-pos(1)/2,0-pos(1)/2)])
+        path.addPolygon(poly)
+        
+        mtn.setPos(0,pos(5))
+        mtn.setPath(path)
+        self.addItem(mtn)
+        
 
     def setCircuit(self, circuit: Circuit) -> None:
         self.circuit = circuit
