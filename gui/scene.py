@@ -33,17 +33,17 @@ class Scene(QGraphicsScene):
         self.drawCircuit()
 
 
-        mtn = QGraphicsPathItem()
-        mtn.setPen(QPen(QColor("black"), 1))
-        mtn.setBrush(QColor("black"))
+        # mtn = QGraphicsPathItem()
+        # mtn.setPen(QPen(QColor("black"), 1))
+        # mtn.setBrush(QColor("black"))
 
-        path = QPainterPath()
-        poly = QPolygonF([QPointF(0-pos(1)/2,0-pos(1)/2),QPointF(0-pos(1)/2,pos(1)-pos(1)/2),QPointF(pos(1)-pos(1)/2,pos(1)/2-pos(1)/2),QPointF(0-pos(1)/2,0-pos(1)/2)])
-        path.addPolygon(poly)
+        # path = QPainterPath()
+        # poly = QPolygonF([QPointF(0-pos(1)/2,0-pos(1)/2),QPointF(0-pos(1)/2,pos(1)-pos(1)/2),QPointF(pos(1)-pos(1)/2,pos(1)/2-pos(1)/2),QPointF(0-pos(1)/2,0-pos(1)/2)])
+        # path.addPolygon(poly)
         
-        mtn.setPos(0,pos(5))
-        mtn.setPath(path)
-        self.addItem(mtn)
+        # mtn.setPos(0,pos(5))
+        # mtn.setPath(path)
+        # self.addItem(mtn)
         
 
     def setCircuit(self, circuit: Circuit) -> None:
