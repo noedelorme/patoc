@@ -33,8 +33,8 @@ class EdgeItem(QGraphicsPathItem):
         self.update()
     
     def update(self) -> None:
-        nb_controls_s = 0 if isinstance(self.s, BoundItem) else self.s.nb_controls
-        nb_controls_t = 0 if isinstance(self.t, BoundItem) else self.t.nb_controls
+        nb_controls_s = self.s.nb_controls if isinstance(self.s, GateGroup) else 0
+        nb_controls_t = self.t.nb_controls if isinstance(self.t, GateGroup) else 0
         outputs_s = self.s.controls if self.wiring[0]<nb_controls_s else self.s.outputs
         inputs_t = self.t.controls if self.wiring[1]<nb_controls_t else self.t.inputs
         x1 = outputs_s[self.wiring[0]-nb_controls_s].pos().x()

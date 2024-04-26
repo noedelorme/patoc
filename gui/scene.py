@@ -5,11 +5,12 @@ from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPai
 
 from engine.circuit import Circuit, Gate
 from engine.grid import Grid
-from .gate_items import GateGroup, BoundItem
+from .gate_items import GateGroup, BoundItem, DividerGroup
 from .edge_items import EdgeItem
 
 from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity, fullexample
 from .utils import *
+import math as math
 
 class Scene(QGraphicsScene):
     """Class for managing the graphical items"""
@@ -31,20 +32,6 @@ class Scene(QGraphicsScene):
         self.drawGrid()
         self.computeDefaultCoords()
         self.drawCircuit()
-
-
-        mtn = QGraphicsPathItem()
-        mtn.setPen(QPen(QColor("black"), 2))
-        mtn.setBrush(QColor(240,240,240))
-
-        path = QPainterPath()
-        # poly = QPolygonF([QPointF(0-pos(1)/2,0-pos(1)/2),QPointF(0-pos(1)/2,pos(1)-pos(1)/2),QPointF(pos(1)-pos(1)/2,pos(1)/2-pos(1)/2),QPointF(0-pos(1)/2,0-pos(1)/2)])
-        # path.addPolygon(poly)
-        path.cubicTo(QPointF(25,50+10),QPointF(25,50-10),QPointF(50,0))
-        
-        mtn.setPos(0,pos(5))
-        mtn.setPath(path)
-        self.addItem(mtn)
         
 
     def setCircuit(self, circuit: Circuit) -> None:
@@ -93,6 +80,8 @@ class Scene(QGraphicsScene):
         for gate in self.circuit.gates:
             if gate.type == "in" or gate.type=="out":
                 gate.gate_item = BoundItem(self, gate)
+            elif gate.type == "div":
+                gate.gate_item = DividerGroup(self, gate)
             else:
                 gate.gate_item = GateGroup(self, gate)
 
