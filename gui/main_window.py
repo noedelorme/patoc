@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QMainWindow
 from .scene import Scene, SceneView
+from .edit_panel import EditPanel
 
 class MainWindow(QMainWindow):
     """The main window of Patoc"""
@@ -7,7 +8,11 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
-        scene = Scene()
-        scene_view = SceneView(scene)
-        self.setCentralWidget(scene_view)
-        self.setFixedSize(900,500)
+        self.setFixedSize(1200,600)
+
+        # scene = Scene()
+        # scene_view = SceneView(scene)
+        # self.setCentralWidget(scene_view)
+
+        edit_panel = EditPanel()
+        self.setCentralWidget(edit_panel)

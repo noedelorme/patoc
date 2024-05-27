@@ -85,6 +85,10 @@ class Circuit:
 
     def __str__(self) -> str:
         return "This circuit is called: " + self.name
+
+    def print(self) -> None:
+        for gate in self.gates:
+            print(gate)
     
     def gate(self, type, dom=1, cod=None, pos=(None,None), org=False, dst=False) -> Gate:
         id = len(self.gates)

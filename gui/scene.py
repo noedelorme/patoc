@@ -25,7 +25,7 @@ class Scene(QGraphicsScene):
 
         self.circuit = None
 
-        self.setCircuit(fullexample)
+        self.setCircuit(czLHS)
         self.setBackgroundBrush(QColor("white"))
         self.setSceneRect(-self.real_grid_radius,-self.real_grid_radius,2*self.real_grid_radius,2*self.real_grid_radius)
 

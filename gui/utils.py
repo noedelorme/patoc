@@ -1,6 +1,11 @@
+import os
+
+
 grid_size = 200
 grid_offset = 20
 
+def get_data(path: str) -> str:
+    return os.path.join(os.environ.get("_MEIPASS", os.path.abspath(os.path.dirname(__file__))), path)
 
 def pos(i): return i*grid_offset
 
