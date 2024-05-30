@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QWidget, QTreeView, QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
 from PySide6.QtGui import QStandardItem, QStandardItemModel, QColor, QFont
 
-from .rules_widget import RulesWidget, RulesTreeWidget
+from .rules_widget import RulesWidget
 from .scene import Scene, SceneView
-from .steps_widget import StepsWidget
+from .deriv_widget import DerivWidget
 
 
 class EditPanel(QWidget):
@@ -15,16 +15,16 @@ class EditPanel(QWidget):
         # self.layout().setContentsMargins(0, 0, 0, 0)
 
         rules_sidebar = RulesWidget()
-        rules_sidebar.setFixedWidth(200)
+        rules_sidebar.setFixedWidth(250)
         self.layout().addWidget(rules_sidebar)
 
         scene = Scene()
         scene_view = SceneView(scene)
         self.layout().addWidget(scene_view)
 
-        steps_sidebar = StepsWidget()
-        steps_sidebar.setFixedWidth(200)
-        self.layout().addWidget(steps_sidebar)
+        deriv_sidebar = DerivWidget()
+        deriv_sidebar.setFixedWidth(250)
+        self.layout().addWidget(deriv_sidebar)
     
     def itemDoubleClickEvent(self, val):
         print(val.parent())

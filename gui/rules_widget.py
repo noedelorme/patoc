@@ -1,6 +1,7 @@
-from PySide6.QtWidgets import QWidget, QTreeView, QHBoxLayout, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
-
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QFrame, QTreeView, QGroupBox, QRadioButton, QHBoxLayout, QVBoxLayout, QGridLayout, QPushButton, QTreeWidget, QTreeWidgetItem, QLabel
 from PySide6.QtGui import QStandardItem, QStandardItemModel, QColor, QFont
+
 
 class RuleItem(QTreeWidgetItem):
     def __init__(self, text="No text") -> None:
@@ -8,7 +9,8 @@ class RuleItem(QTreeWidgetItem):
 
         self.equation = "secret"
 
-class RulesTreeWidget(QTreeWidget):
+
+class RulesTree(QTreeWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setColumnCount(1)
@@ -32,26 +34,28 @@ class RulesTreeWidget(QTreeWidget):
     def processItem(self, item, column):
         print(item.equation)
 
-class RulesDisplayWidget(QWidget):
+
+class RulesWidget(QGroupBox):
     def __init__(self) -> None:
         super().__init__()
         self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(5,5,5,5)
 
-        show_button = QPushButton("show")
-        sens_button = QPushButton("sens")
-        self.layout().addWidget(show_button)
-        self.layout().addWidget(sens_button)
-
-
-
-class RulesWidget(QWidget):
-    def __init__(self) -> None:
-        super().__init__()
-        self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
-
-        tree = RulesTreeWidget()
-        display = RulesDisplayWidget()
+        tree = RulesTree()
         self.layout().addWidget(tree)
-        self.layout().addWidget(display)
 
+        left2right = QRadioButton("Left to right")
+        left2right.setChecked(True)
+        left2right.toggled.connect(self.change_sens)
+        self.layout().addWidget(left2right)
+        right2left = QRadioButton("Right to left")
+        self.layout().addWidget(right2left)
+
+        show_button = QPushButton("Preview")
+        match_button = QPushButton("Match")
+        self.layout().addWidget(show_button)
+        self.layout().addWidget(match_button)
+
+
+    def change_sens(self) -> None:
+        print("change sens", self.sender().isChecked())
