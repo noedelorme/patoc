@@ -77,7 +77,7 @@ class DerivWidget(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().setContentsMargins(5, 0, 0, 0)
 
         matchs = MatchsWidget()
         self.layout().addWidget(matchs)

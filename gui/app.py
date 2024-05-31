@@ -15,7 +15,7 @@ class Patoc(QApplication):
         self.setApplicationName("Patoc")
         self.setDesktopFileName('Patoc')
         self.setApplicationVersion('0.1')
-        self.main_window = MainWindow()
+        self.main_window = MainWindow(self)
         self.main_window.setWindowTitle("Patoc")
         self.main_window.setWindowIcon(QIcon(get_data('../icons/logo.png')))
         self.setWindowIcon(self.main_window.windowIcon())
