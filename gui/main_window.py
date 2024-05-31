@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow
+from PySide6.QtWidgets import QMainWindow, QTabWidget
 from PySide6.QtGui import QAction, QKeySequence
 
 from .scene import Scene, SceneView
@@ -10,7 +10,7 @@ class MainWindow(QMainWindow):
     def __init__(self, app) -> None:
         super().__init__()
         self.app = app
-        self.setFixedSize(1200,600)
+        self.setFixedSize(1200,650)
         menu_bar = self.menuBar()
 
         self.new_circuit_action = QAction("New circuit", self)
@@ -51,8 +51,16 @@ class MainWindow(QMainWindow):
         help_menu = menu_bar.addMenu("&Help")
         help_menu.addAction(self.github_action)
 
+        tab_widget = QTabWidget(movable=True, tabsClosable=True)
+        self.setCentralWidget(tab_widget)
+        # tab_widget.setContentsMargins(5,5,5,5)
+
         edit_panel = EditPanel()
-        self.setCentralWidget(edit_panel)
+        tab_widget.addTab(edit_panel, "Derive")
+
+        scene = Scene()
+        scene_view = SceneView(scene)
+        tab_widget.addTab(scene_view, "New circuit")
     
     def quit(self) -> None:
         self.app.quit()

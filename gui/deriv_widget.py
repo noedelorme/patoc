@@ -14,13 +14,13 @@ class MatchsList(QListWidget):
     def __init__(self) -> None:
         super().__init__()
         
-        step1 = MatchItem("depth=1, x=2, y=13", "pink")
+        step1 = MatchItem("depth=1, x=2, y=13", "#ffca3a")
         self.addItem(step1)
-        step2 = MatchItem("depth=1, x=2, y=13", "blue")
+        step2 = MatchItem("depth=1, x=2, y=13", "#1982c4")
         self.addItem(step2)
-        step3 = MatchItem("depth=1, x=2, y=13", "red")
+        step3 = MatchItem("depth=1, x=2, y=13", "#8ac926")
         self.addItem(step3)
-        step4 = MatchItem("depth=1, x=2, y=13", "yellow")
+        step4 = MatchItem("depth=1, x=2, y=13", "#ff595e")
         self.addItem(step4)
         step1.setSelected(True)
     
@@ -77,7 +77,7 @@ class DerivWidget(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(5, 0, 0, 0)
+        self.layout().setContentsMargins(0,0,0,0)
 
         matchs = MatchsWidget()
         self.layout().addWidget(matchs)

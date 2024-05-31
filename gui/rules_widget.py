@@ -26,6 +26,19 @@ class RulesTree(QTreeWidget):
         cat.addChild(item2)
         item3 = RuleItem("Hadamard cancellation")
         cat.addChild(item3)
+        item4 = RuleItem("Control-P(2π)")
+        cat.addChild(item4)
+        item5 = RuleItem("P(0) introduction")
+        cat.addChild(item5)
+        item6 = RuleItem("Swap with Cnots")
+        cat.addChild(item6)
+
+        custom = RuleItem("Custom rules")
+        root.addChild(custom)
+        citem1 = RuleItem("Controls swapping")
+        custom.addChild(citem1)
+        citem2 = RuleItem("Phase gadget")
+        custom.addChild(citem2)
 
         self.expandAll()
 

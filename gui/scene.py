@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt, QPointF, QSizeF
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
-from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGroupBox, QVBoxLayout, QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPainterPath, QPolygonF
 
 from engine.circuit import Circuit, Gate
@@ -25,7 +24,7 @@ class Scene(QGraphicsScene):
 
         self.circuit = None
 
-        self.setCircuit(circuit1)
+        self.setCircuit(fullexample)
         self.setBackgroundBrush(QColor("white"))
         self.setSceneRect(-self.real_grid_radius,-self.real_grid_radius,2*self.real_grid_radius,2*self.real_grid_radius)
 
@@ -106,3 +105,14 @@ class SceneView(QGraphicsView):
     def __init__(self, scene: Scene) -> None:
         self.scene = scene
         super().__init__(self.scene)
+
+
+class SceneWidget(QGroupBox):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(5,5,5,5)
+
+        scene = Scene()
+        scene_view = SceneView(scene)
+        self.layout().addWidget(scene_view)

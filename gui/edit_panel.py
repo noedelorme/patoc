@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QTreeView, QHBoxLayout, QPushButton, QTre
 from PySide6.QtGui import QStandardItem, QStandardItemModel, QColor, QFont
 
 from .rules_widget import RulesWidget
-from .scene import Scene, SceneView
+from .scene import SceneWidget
 from .deriv_widget import DerivWidget
 
 
@@ -12,15 +12,14 @@ class EditPanel(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setLayout(QHBoxLayout())
-        # self.layout().setContentsMargins(0, 0, 0, 0)
+        # self.layout().setContentsMargins(5,5,5,5)
 
         rules_sidebar = RulesWidget()
         rules_sidebar.setFixedWidth(250)
         self.layout().addWidget(rules_sidebar)
 
-        scene = Scene()
-        scene_view = SceneView(scene)
-        self.layout().addWidget(scene_view)
+        scene = SceneWidget()
+        self.layout().addWidget(scene)
 
         deriv_sidebar = DerivWidget()
         deriv_sidebar.setFixedWidth(250)
