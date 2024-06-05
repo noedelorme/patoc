@@ -2,13 +2,11 @@ from PySide6.QtCore import Qt, QPointF, QSizeF
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGroupBox, QVBoxLayout, QGraphicsPathItem, QGraphicsRectItem, QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
 from PySide6.QtGui import QBrush, QColor, QPen, QRadialGradient, QGradient, QPainterPath, QPolygonF
 
-from engine.circuit import Circuit, Gate
-from engine.grid import Grid
-from .gate_items import GateGroup, BoundItem, DividerGroup
-from .edge_items import EdgeItem
+from ..circuit import Circuit
+from .items import GateGroup, BoundItem, DividerGroup, EdgeItem
 
-from data.examples import czLHS, circuit1, subcircuit1, circuit2, connectivity, fullexample
-from .utils import *
+from ..examples import czLHS, circuit1, subcircuit1, circuit2, connectivity, fullexample
+from ..utils import *
 import math as math
 
 class Scene(QGraphicsScene):
@@ -105,6 +103,8 @@ class SceneView(QGraphicsView):
     def __init__(self, scene: Scene) -> None:
         self.scene = scene
         super().__init__(self.scene)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
 
 
 class SceneWidget(QGroupBox):

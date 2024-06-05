@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Qt, QPointF, QSizeF, QRectF
 from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItemGroup, QGraphicsPolygonItem, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem, QGraphicsItem, QGraphicsSceneMouseEvent
 from PySide6.QtGui import QColor, QFont, QPen, QBrush, QPainterPath, QCursor, QPolygonF
-from engine.circuit import Gate
+from ..circuit import Gate
 
-from .utils import *
+from ..utils import *
 import math as math
 
 if TYPE_CHECKING:
@@ -362,3 +362,39 @@ class DividerGroup:
         for output in self.outputs: output.update()
         self.divider.update()
         for edge in self.edges: edge.update()
+
+
+class EdgeItem(QGraphicsPathItem):
+    pen: QPen = QPen(QColor("black"), 2)
+
+    def __init__(self, scene: Scene, s, t, wiring) -> None:
+        super().__init__()
+        self.scene = scene
+        self.setZValue(1)
+        self.setPen(self.pen)
+
+        self.s = s
+        self.t = t
+        self.wiring = wiring
+
+        self.s.edges.append(self)
+        self.t.edges.append(self)
+
+        self.path = QPainterPath()
+        self.update()
+    
+    def update(self) -> None:
+        nb_controls_s = self.s.nb_controls if isinstance(self.s, GateGroup) else 0
+        nb_controls_t = self.t.nb_controls if isinstance(self.t, GateGroup) else 0
+        outputs_s = self.s.controls if self.wiring[0]<nb_controls_s else self.s.outputs
+        inputs_t = self.t.controls if self.wiring[1]<nb_controls_t else self.t.inputs
+        x1 = outputs_s[self.wiring[0]-nb_controls_s].pos().x()
+        y1 = outputs_s[self.wiring[0]-nb_controls_s].pos().y()
+        x2 = inputs_t[self.wiring[1]-nb_controls_t].pos().x()
+        y2 = inputs_t[self.wiring[1]-nb_controls_t].pos().y()
+        delta_x = x2-x1
+        delta_y = y2-y1
+        self.setPos(x1, y1)
+        self.path.clear()
+        self.path.cubicTo(delta_x/2, 0, delta_x/2, delta_y, delta_x, delta_y)
+        self.setPath(self.path)

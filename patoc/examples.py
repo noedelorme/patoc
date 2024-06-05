@@ -1,4 +1,4 @@
-from engine import *
+from .circuit import Circuit
 
 # LHS of axiom CZ
 czLHS = Circuit("cz-one-cnot")

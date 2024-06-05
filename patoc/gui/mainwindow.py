@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QMainWindow, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QTabWidget, QMenuBar
 from PySide6.QtGui import QAction, QKeySequence
 
 from .scene import Scene, SceneView
-from .edit_panel import EditPanel
+from .derivpanel import DerivPanel
 
 class MainWindow(QMainWindow):
     """The main window of Patoc"""
@@ -11,7 +11,26 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.app = app
         self.setFixedSize(1200,650)
-        menu_bar = self.menuBar()
+
+        self.build_menu()
+        
+        tab_widget = QTabWidget(movable=True, tabsClosable=True)
+        # tab_widget.setDocumentMode(True)
+        self.setCentralWidget(tab_widget)
+        # tab_widget.setContentsMargins(5,5,5,5)
+
+        # edit_panel = EditPanel()
+        # tab_widget.addTab(edit_panel, "Derive")
+
+        edit_panel = DerivPanel()
+        tab_widget.addTab(edit_panel, "Derive")
+
+        scene = Scene()
+        scene_view = SceneView(scene)
+        tab_widget.addTab(scene_view, "New circuit")
+    
+    def build_menu(self) -> None:
+        menu_bar = QMenuBar()
 
         self.new_circuit_action = QAction("New circuit", self)
         self.new_circuit_action.triggered.connect(self.new_circuit)
@@ -51,16 +70,7 @@ class MainWindow(QMainWindow):
         help_menu = menu_bar.addMenu("&Help")
         help_menu.addAction(self.github_action)
 
-        tab_widget = QTabWidget(movable=True, tabsClosable=True)
-        self.setCentralWidget(tab_widget)
-        # tab_widget.setContentsMargins(5,5,5,5)
-
-        edit_panel = EditPanel()
-        tab_widget.addTab(edit_panel, "Derive")
-
-        scene = Scene()
-        scene_view = SceneView(scene)
-        tab_widget.addTab(scene_view, "New circuit")
+        self.setMenuBar(menu_bar)
     
     def quit(self) -> None:
         self.app.quit()
