@@ -8,7 +8,17 @@ from ..utils import *
 class MatchItem(QListWidgetItem):
     def __init__(self,  text="No text", color="green") -> None:
         super().__init__(text)
-        self.setIcon(QIcon_from_svg(get_data("icons/circle-solid.svg"), QColor(color)))
+        self.color = color
+        self.setIcon(QIcon_from_svg(get_data("icons/circle-solid.svg"), QColor(self.color)))
+
+        self.is_visible = True
+
+    def toggle_visibility(self) -> None:
+        self.is_visible = not self.is_visible
+        if self.is_visible:
+            self.setIcon(QIcon_from_svg(get_data("icons/circle-solid.svg"), QColor(self.color)))
+        else:
+            self.setIcon(QIcon_from_svg(get_data("icons/circle-empty.svg"), QColor(self.color)))
 
 class MatchsList(QListWidget):
     def __init__(self) -> None:
@@ -23,6 +33,11 @@ class MatchsList(QListWidget):
         step4 = MatchItem("depth=1, x=2, y=13", "#ff595e")
         self.addItem(step4)
         step1.setSelected(True)
+
+        self.itemDoubleClicked.connect(self.toggle_item_visibility)
+    
+    def toggle_item_visibility(self, item) -> None:
+        item.toggle_visibility()
     
 class MatchsWidget(QGroupBox):
     def __init__(self) -> None:

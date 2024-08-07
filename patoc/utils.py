@@ -1,6 +1,20 @@
 import os
-
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+
+from .cprop import Color, Object
+
+COL0 = Color("0")
+COL1 = Color("1")
+COLn = Color("n")
+COLm = Color("m")
+OBJ1 = Object([COL1])
+OBJ11 = Object([COL1,COL1])
+
+
+def tensor_object(obj1: Object, obj2: Object) -> Object:
+    pass #todo
+
+
 
 
 grid_size = 200

@@ -4,7 +4,7 @@ Patoc is also a strongly fumarolic stratovolcano in the Philippines.
 
 ## Usage
 ```bash
-python3 main.py
+python3 -m patoc
 ```
 
 <!---

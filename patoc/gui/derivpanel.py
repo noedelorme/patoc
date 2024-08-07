@@ -46,6 +46,7 @@ class DerivPanel(QWidget):
         # self.layout().setContentsMargins(5,5,5,5)
 
         self.splitter = QSplitter()
+        self.splitter.setChildrenCollapsible(False)
         self.layout().addWidget(self.splitter)
 
         rules_sidebar = RulesWidget()
@@ -58,6 +59,8 @@ class DerivPanel(QWidget):
 
         matchs_steps_sidebar = QSplitter()
         matchs_steps_sidebar.setOrientation(Qt.Vertical)
+        matchs_steps_sidebar.setMinimumWidth(200)
+        matchs_steps_sidebar.setChildrenCollapsible(False)
         matchs_widget = MatchsWidget()
         steps_widget = StepsWidget()
         matchs_widget.setMinimumHeight(200)
