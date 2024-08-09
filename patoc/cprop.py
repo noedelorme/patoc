@@ -75,6 +75,9 @@ class Object:
     def colors(self) -> list[Color]:
         return self._colors
     
+    def append(self, color: Color) -> None:
+        self._colors.append(color)
+    
     def tensor(self, other: Object) -> Object:
         return Object(self.colors + other.colors)
     
@@ -185,5 +188,5 @@ class Composition(AbstractArrow):
         self.left.print()
         self.right.print()
 
-    def compute_term(self) -> str:
-        pass
+    def to_term(self) -> str:
+        return "no yet implemented"
